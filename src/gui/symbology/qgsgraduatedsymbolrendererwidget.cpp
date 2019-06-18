@@ -56,7 +56,7 @@ void QgsGraduatedSymbolRendererModel::setRenderer( QgsGraduatedSymbolRenderer *r
 {
   if ( mRenderer )
   {
-    if ( mRenderer->ranges().size() )
+    if ( !mRenderer->ranges().isEmpty() )
     {
       beginRemoveRows( QModelIndex(), 0, mRenderer->ranges().size() - 1 );
       mRenderer = nullptr;
@@ -69,7 +69,7 @@ void QgsGraduatedSymbolRendererModel::setRenderer( QgsGraduatedSymbolRenderer *r
   }
   if ( renderer )
   {
-    if ( renderer->ranges().size() )
+    if ( !renderer->ranges().isEmpty() )
     {
       beginInsertRows( QModelIndex(), 0, renderer->ranges().size() - 1 );
       mRenderer = renderer;
@@ -818,6 +818,11 @@ void QgsGraduatedSymbolRendererWidget::refreshRanges( bool reset )
     return;
 
   mModel->updateSymbology( reset );
+
+  disconnectUpdateHandlers();
+  spinGraduatedClasses->setValue( mRenderer->ranges().count() );
+  connectUpdateHandlers();
+
   emit widgetChanged();
 }
 

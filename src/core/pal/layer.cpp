@@ -51,7 +51,6 @@ Layer::Layer( QgsAbstractLabelProvider *provider, const QString &name, QgsPalLay
   , mDisplayAll( displayAll )
   , mCentroidInside( false )
   , mArrangement( arrangement )
-  , mArrangementFlags( nullptr )
   , mMode( LabelPerFeature )
   , mMergeLines( false )
   , mUpsidedownLabels( Upright )
@@ -321,7 +320,6 @@ void Layer::joinConnectedFeatures()
   int connectedFeaturesId = 0;
   for ( auto it = mConnectedHashtable.constBegin(); it != mConnectedHashtable.constEnd(); ++it )
   {
-    const QString labelTExt = it.key();
     QVector<FeaturePart *> parts = it.value();
     connectedFeaturesId++;
 

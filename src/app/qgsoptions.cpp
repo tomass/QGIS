@@ -374,12 +374,12 @@ QgsOptions::QgsOptions( QWidget *parent, Qt::WindowFlags fl, const QList<QgsOpti
 
   // cache settings
   mCacheDirectory->setText( mSettings->value( QStringLiteral( "cache/directory" ) ).toString() );
-  mCacheDirectory->setPlaceholderText( QDir( QgsApplication::qgisSettingsDirPath() ).canonicalPath() + QDir::separator() + QStringLiteral( "cache" ) );
+  mCacheDirectory->setPlaceholderText( QStandardPaths::writableLocation( QStandardPaths::CacheLocation ) );
   mCacheSize->setMinimum( 0 );
   mCacheSize->setMaximum( std::numeric_limits<int>::max() );
   mCacheSize->setSingleStep( 1024 );
-  qint64 cacheSize = mSettings->value( QStringLiteral( "cache/size" ), 50 * 1024 * 1024 ).toULongLong();
-  mCacheSize->setValue( ( int )( cacheSize / 1024 ) );
+  qint64 cacheSize = mSettings->value( QStringLiteral( "cache/size" ), 50 * 1024 * 1024 ).toLongLong();
+  mCacheSize->setValue( static_cast<int>( cacheSize / 1024 ) );
   connect( mBrowseCacheDirectory, &QAbstractButton::clicked, this, &QgsOptions::browseCacheDirectory );
   connect( mClearCache, &QAbstractButton::clicked, this, &QgsOptions::clearCache );
 
@@ -462,8 +462,15 @@ QgsOptions::QgsOptions( QWidget *parent, Qt::WindowFlags fl, const QList<QgsOpti
   leLayerGlobalCrs->setCrs( mLayerDefaultCrs );
 
   const QString defaultProjectCrs = mSettings->value( QStringLiteral( "/projections/defaultProjectCrs" ), GEO_EPSG_CRS_AUTHID, QgsSettings::App ).toString();
-  leProjectGlobalCrs->setCrs( QgsCoordinateReferenceSystem( defaultProjectCrs ) );
   leProjectGlobalCrs->setOptionVisible( QgsProjectionSelectionWidget::DefaultCrs, false );
+  leProjectGlobalCrs->setOptionVisible( QgsProjectionSelectionWidget::CrsNotSet, true );
+  leProjectGlobalCrs->setNotSetText( tr( "No projection (or unknown/non-Earth projection)" ) );
+  leProjectGlobalCrs->setCrs( QgsCoordinateReferenceSystem( defaultProjectCrs ) );
+  leProjectGlobalCrs->setMessage(
+    tr( "<h1>Default projection for new projects</h1>"
+        "Select a projection that should be used for new projects that are created in QGIS."
+      ) );
+
   const QgsGui::ProjectCrsBehavior projectCrsBehavior = mSettings->enumValue( QStringLiteral( "/projections/newProjectCrsBehavior" ),  QgsGui::UseCrsOfFirstLayerAdded, QgsSettings::App );
   switch ( projectCrsBehavior )
   {
@@ -1108,7 +1115,7 @@ QgsOptions::QgsOptions( QWidget *parent, Qt::WindowFlags fl, const QList<QgsOpti
 
   // Setup OpenCL Acceleration widget
 
-  connect( mGPUEnableCheckBox, &QCheckBox::toggled, [ = ]( bool checked )
+  connect( mGPUEnableCheckBox, &QCheckBox::toggled, this, [ = ]( bool checked )
   {
     if ( checked )
     {

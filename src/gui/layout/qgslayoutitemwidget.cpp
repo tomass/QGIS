@@ -21,6 +21,7 @@
 #include "qgsprintlayout.h"
 #include "qgslayoutatlas.h"
 #include "qgsexpressioncontextutils.h"
+#include "qgslayoutframe.h"
 
 #include <QButtonGroup>
 
@@ -98,7 +99,7 @@ void QgsLayoutConfigObject::updateDataDefinedButton( QgsPropertyOverrideButton *
   QgsLayoutObject::DataDefinedProperty key = static_cast< QgsLayoutObject::DataDefinedProperty >( button->propertyKey() );
   whileBlocking( button )->setToProperty( mLayoutObject->dataDefinedProperties().property( key ) );
 
-  // In case the button was initialized to a different config object, we need to reconnect to it here (see https://issues.qgis.org/issues/18694 )
+  // In case the button was initialized to a different config object, we need to reconnect to it here (see https://github.com/qgis/QGIS/issues/26582 )
   connect( button, &QgsPropertyOverrideButton::changed, this, &QgsLayoutConfigObject::updateDataDefinedProperty, Qt::UniqueConnection );
   button->registerExpressionContextGenerator( mLayoutObject );
 }
@@ -221,11 +222,20 @@ void QgsLayoutItemPropertiesWidget::updateVariables()
   if ( !mItem )
     return;
 
+  mBlockVariableUpdates = true;
   QgsExpressionContext context = mItem->createExpressionContext();
   mVariableEditor->setContext( &context );
-  int editableIndex = context.indexOfScope( tr( "Layout Item" ) );
-  if ( editableIndex >= 0 )
-    mVariableEditor->setEditableScopeIndex( editableIndex );
+
+  // here, we prefer to make the multiframe's scope the editable one. That's because most expressions are evaluated
+  // on the multiframe subclass level, not on a frame-by-frame basis. Ideally both would be editable, but for now let's go
+  // with the most useful one.
+  const int multiFrameScopeIndex = context.indexOfScope( tr( "Multiframe Item" ) );
+  const int itemScopeIndex = context.indexOfScope( tr( "Layout Item" ) );
+  if ( multiFrameScopeIndex >= 0 )
+    mVariableEditor->setEditableScopeIndex( multiFrameScopeIndex );
+  else if ( itemScopeIndex >= 0 )
+    mVariableEditor->setEditableScopeIndex( itemScopeIndex );
+  mBlockVariableUpdates = false;
 }
 
 QgsLayoutItemPropertiesWidget::QgsLayoutItemPropertiesWidget( QWidget *parent, QgsLayoutItem *item )
@@ -304,7 +314,11 @@ QgsLayoutItemPropertiesWidget::QgsLayoutItemPropertiesWidget( QWidget *parent, Q
   connect( mOpacityWidget, &QgsOpacityWidget::opacityChanged, this, &QgsLayoutItemPropertiesWidget::opacityChanged );
 
   updateVariables();
-  connect( mVariableEditor, &QgsVariableEditorWidget::scopeChanged, this, &QgsLayoutItemPropertiesWidget::variablesChanged );
+  connect( mVariableEditor, &QgsVariableEditorWidget::scopeChanged, this, [ = ]
+  {
+    if ( !mBlockVariableUpdates )
+      QgsLayoutItemPropertiesWidget::variablesChanged();
+  } );
   // listen out for variable edits
   connect( QgsApplication::instance(), &QgsApplication::customVariablesChanged, this, &QgsLayoutItemPropertiesWidget::updateVariables );
   connect( item->layout()->project(), &QgsProject::customVariablesChanged, this, &QgsLayoutItemPropertiesWidget::updateVariables );
@@ -409,7 +423,17 @@ void QgsLayoutItemPropertiesWidget::variablesChanged()
   if ( !mItem )
     return;
 
-  QgsExpressionContextUtils::setLayoutItemVariables( mItem, mVariableEditor->variablesInActiveScope() );
+  if ( QgsLayoutFrame *frame = qobject_cast< QgsLayoutFrame * >( mItem ) )
+  {
+    if ( QgsLayoutMultiFrame *mf = frame->multiFrame() )
+    {
+      QgsExpressionContextUtils::setLayoutMultiFrameVariables( mf, mVariableEditor->variablesInActiveScope() );
+    }
+  }
+  else
+  {
+    QgsExpressionContextUtils::setLayoutItemVariables( mItem, mVariableEditor->variablesInActiveScope() );
+  }
 }
 
 QgsLayoutItem::ReferencePoint QgsLayoutItemPropertiesWidget::positionMode() const
@@ -707,6 +731,8 @@ void QgsLayoutItemPropertiesWidget::setValuesForGuiElements()
   setValuesForGuiPositionElements();
   setValuesForGuiNonPositionElements();
   populateDataDefinedButtons();
+
+  updateVariables();
 }
 
 void QgsLayoutItemPropertiesWidget::mBlendModeCombo_currentIndexChanged( int index )

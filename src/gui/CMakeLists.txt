@@ -201,6 +201,7 @@ SET(QGIS_GUI_SRCS
   processing/qgsprocessingalgorithmdialogbase.cpp
   processing/qgsprocessingconfigurationwidgets.cpp
   processing/qgsprocessingguiregistry.cpp
+  processing/qgsprocessingmaplayercombobox.cpp
   processing/qgsprocessingmatrixparameterdialog.cpp
   processing/qgsprocessingmodelerparameterwidget.cpp
   processing/qgsprocessingmultipleselectiondialog.cpp
@@ -752,6 +753,7 @@ SET(QGIS_GUI_MOC_HDRS
   processing/qgsprocessingalgorithmconfigurationwidget.h
   processing/qgsprocessingalgorithmdialogbase.h
   processing/qgsprocessingconfigurationwidgets.h
+  processing/qgsprocessingmaplayercombobox.h
   processing/qgsprocessingmatrixparameterdialog.h
   processing/qgsprocessingmodelerparameterwidget.h
   processing/qgsprocessingmultipleselectiondialog.h
@@ -959,6 +961,7 @@ INCLUDE_DIRECTORIES(
   ${CMAKE_SOURCE_DIR}/src/core/metadata
   ${CMAKE_SOURCE_DIR}/src/core/processing
   ${CMAKE_SOURCE_DIR}/src/core/mesh
+  ${CMAKE_SOURCE_DIR}/src/core/pal
   ${CMAKE_SOURCE_DIR}/src/core/providers/memory
   ${CMAKE_SOURCE_DIR}/src/core/raster
   ${CMAKE_SOURCE_DIR}/src/core/scalebar

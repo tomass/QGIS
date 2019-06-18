@@ -1063,7 +1063,6 @@ QgisApp::QgisApp( QSplashScreen *splash, bool restorePlugins, bool skipVersionCh
 
   addDockWidget( Qt::LeftDockWidgetArea, mBrowserWidget );
   mBrowserWidget->hide();
-  connect( this, &QgisApp::newProject, mBrowserWidget, &QgsBrowserDockWidget::updateProjectHome );
   // Only connect the first widget: the model is shared, there is no need to refresh multiple times.
   connect( this, &QgisApp::connectionsChanged, mBrowserWidget, &QgsBrowserDockWidget::refresh );
   connect( mBrowserWidget, &QgsBrowserDockWidget::connectionsChanged, this, &QgisApp::connectionsChanged );
@@ -1074,7 +1073,6 @@ QgisApp::QgisApp( QSplashScreen *splash, bool restorePlugins, bool skipVersionCh
   mBrowserWidget2->setObjectName( QStringLiteral( "Browser2" ) );
   addDockWidget( Qt::LeftDockWidgetArea, mBrowserWidget2 );
   mBrowserWidget2->hide();
-  connect( this, &QgisApp::newProject, mBrowserWidget2, &QgsBrowserDockWidget::updateProjectHome );
   connect( mBrowserWidget2, &QgsBrowserDockWidget::connectionsChanged, this, &QgisApp::connectionsChanged );
   connect( mBrowserWidget2, &QgsBrowserDockWidget::openFile, this, &QgisApp::openFile );
   connect( mBrowserWidget2, &QgsBrowserDockWidget::handleDropUriList, this, &QgisApp::handleDropUriList );
@@ -1255,6 +1253,7 @@ QgisApp::QgisApp( QSplashScreen *splash, bool restorePlugins, bool skipVersionCh
   }
 
   QgsApplication::validityCheckRegistry()->addCheck( new QgsLayoutScaleBarValidityCheck() );
+  QgsApplication::validityCheckRegistry()->addCheck( new QgsLayoutNorthArrowValidityCheck() );
   QgsApplication::validityCheckRegistry()->addCheck( new QgsLayoutOverviewValidityCheck() );
   QgsApplication::validityCheckRegistry()->addCheck( new QgsLayoutPictureSourceValidityCheck() );
 
@@ -1631,6 +1630,8 @@ QgisApp::~QgisApp()
   mBrowserModel = nullptr;
   delete mGeometryValidationDock;
   mGeometryValidationDock = nullptr;
+  delete mSnappingUtils;
+  mSnappingUtils = nullptr;
 
   QgsGui::instance()->nativePlatformInterface()->cleanup();
 
@@ -3054,6 +3055,7 @@ void QgisApp::createStatusBar()
   statusBar()->setFont( statusBarFont );
 
   mStatusBar = new QgsStatusBar();
+  mStatusBar->setParentStatusBar( QMainWindow::statusBar() );
   mStatusBar->setFont( statusBarFont );
 
   statusBar()->addPermanentWidget( mStatusBar, 10 );
@@ -4727,6 +4729,8 @@ bool QgisApp::addVectorLayersPrivate( const QStringList &layerQStringList, const
         // the list if he wants to load it.
         delete layer;
 
+        for ( QgsMapLayer *l : addedLayers )
+          askUserForDatumTransform( l->crs(), QgsProject::instance()->crs() );
       }
       else if ( !sublayers.isEmpty() ) // there is 1 layer of data available
       {
@@ -4779,6 +4783,7 @@ bool QgisApp::addVectorLayersPrivate( const QStringList &layerQStringList, const
     bool ok;
     l->loadDefaultStyle( ok );
     l->loadDefaultMetadata( ok );
+    askUserForDatumTransform( l->crs(), QgsProject::instance()->crs() );
   }
   activateDeactivateLayerRelatedActions( activeLayer() );
 
@@ -4833,6 +4838,9 @@ QgsMeshLayer *QgisApp::addMeshLayerPrivate( const QString &url, const QString &b
   freezeCanvases();
 
   QgsProject::instance()->addMapLayer( layer.get() );
+
+  askUserForDatumTransform( layer->crs(), QgsProject::instance()->crs() );
+
   bool ok;
   layer->loadDefaultStyle( ok );
   layer->loadDefaultMetadata( ok );
@@ -5002,7 +5010,17 @@ QList< QgsMapLayer * > QgisApp::askUserForGDALSublayers( QgsRasterLayer *layer )
     // for hdf4 it would be best to get description, because the subdataset_index is not very practical
     if ( name.startsWith( QLatin1String( "netcdf" ), Qt::CaseInsensitive ) ||
          name.startsWith( QLatin1String( "hdf" ), Qt::CaseInsensitive ) )
+    {
       name = name.mid( name.indexOf( path ) + path.length() + 1 );
+    }
+    else if ( name.startsWith( QLatin1String( "GPKG" ), Qt::CaseInsensitive ) )
+    {
+      const auto parts { name.split( ':' ) };
+      if ( parts.count() >= 3 )
+      {
+        name = parts.at( parts.count( ) - 1 );
+      }
+    }
     else
     {
       // remove driver name and file name
@@ -6500,7 +6518,7 @@ bool QgisApp::openLayer( const QString &fileName, bool allowInteractive )
   }
 
   // try as a vector
-  if ( !ok )
+  if ( !ok || fileName.endsWith( QLatin1String( ".gpkg" ), Qt::CaseInsensitive ) )
   {
     if ( allowInteractive )
     {
@@ -10319,11 +10337,16 @@ void QgisApp::legendLayerZoomNative()
   if ( !currentLayer )
     return;
 
-  QgsRasterLayer *layer = qobject_cast<QgsRasterLayer *>( currentLayer );
-  if ( layer )
+  if ( QgsRasterLayer *layer = qobject_cast<QgsRasterLayer *>( currentLayer ) )
   {
     QgsDebugMsg( "Raster units per pixel  : " + QString::number( layer->rasterUnitsPerPixelX() ) );
     QgsDebugMsg( "MapUnitsPerPixel before : " + QString::number( mMapCanvas->mapUnitsPerPixel() ) );
+
+    QList< double >nativeResolutions;
+    if ( layer->dataProvider() )
+    {
+      nativeResolutions = layer->dataProvider()->nativeResolutions();
+    }
 
     // get length of central canvas pixel width in source raster crs
     QgsRectangle e = mMapCanvas->extent();
@@ -10333,8 +10356,33 @@ void QgisApp::legendLayerZoomNative()
     QgsCoordinateTransform ct( mMapCanvas->mapSettings().destinationCrs(), layer->crs(), QgsProject::instance() );
     p1 = ct.transform( p1 );
     p2 = ct.transform( p2 );
-    double width = std::sqrt( p1.sqrDist( p2 ) ); // width (actually the diagonal) of reprojected pixel
-    mMapCanvas->zoomByFactor( std::sqrt( layer->rasterUnitsPerPixelX() * layer->rasterUnitsPerPixelX() + layer->rasterUnitsPerPixelY() * layer->rasterUnitsPerPixelY() ) / width );
+    const double diagonalSize = std::sqrt( p1.sqrDist( p2 ) ); // width (actually the diagonal) of reprojected pixel
+    if ( !nativeResolutions.empty() )
+    {
+      // find closest native resolution
+      QList< double > diagonalNativeResolutions;
+      diagonalNativeResolutions.reserve( nativeResolutions.size() );
+      for ( double d : nativeResolutions )
+        diagonalNativeResolutions << std::sqrt( 2 * d * d );
+
+      int i;
+      for ( i = 0; i < diagonalNativeResolutions.size() && diagonalNativeResolutions.at( i ) < diagonalSize; i++ )
+      {
+        QgsDebugMsg( QStringLiteral( "test resolution %1: %2" ).arg( i ).arg( diagonalNativeResolutions.at( i ) ) );
+      }
+      if ( i == nativeResolutions.size() ||
+           ( i > 0 && ( ( diagonalNativeResolutions.at( i ) - diagonalSize ) > ( diagonalSize - diagonalNativeResolutions.at( i - 1 ) ) ) ) )
+      {
+        QgsDebugMsg( QStringLiteral( "previous resolution" ) );
+        i--;
+      }
+
+      mMapCanvas->zoomByFactor( nativeResolutions.at( i ) / mMapCanvas->mapUnitsPerPixel() );
+    }
+    else
+    {
+      mMapCanvas->zoomByFactor( std::sqrt( layer->rasterUnitsPerPixelX() * layer->rasterUnitsPerPixelX() + layer->rasterUnitsPerPixelY() * layer->rasterUnitsPerPixelY() ) / diagonalSize );
+    }
 
     mMapCanvas->refresh();
     QgsDebugMsg( "MapUnitsPerPixel after  : " + QString::number( mMapCanvas->mapUnitsPerPixel() ) );
@@ -11114,6 +11162,8 @@ QgsVectorLayer *QgisApp::addVectorLayerPrivate( const QString &vectorLayerPath, 
       // the list if he wants to load it.
       delete layer;
       layer = addedLayers.isEmpty() ? nullptr : qobject_cast< QgsVectorLayer * >( addedLayers.at( 0 ) );
+      for ( QgsMapLayer *l : addedLayers )
+        askUserForDatumTransform( l->crs(), QgsProject::instance()->crs() );
     }
     else
     {
@@ -11130,6 +11180,9 @@ QgsVectorLayer *QgisApp::addVectorLayerPrivate( const QString &vectorLayerPath, 
 
       myList << layer;
       QgsProject::instance()->addMapLayers( myList );
+
+      askUserForDatumTransform( layer->crs(), QgsProject::instance()->crs() );
+
       bool ok;
       layer->loadDefaultStyle( ok );
       layer->loadDefaultMetadata( ok );
@@ -11168,17 +11221,14 @@ void QgisApp::addMapLayer( QgsMapLayer *mapLayer )
 {
   freezeCanvases();
 
-// Let render() do its own cursor management
-//  QApplication::setOverrideCursor(Qt::WaitCursor);
-
   if ( mapLayer->isValid() )
   {
     // Register this layer with the layers registry
     QList<QgsMapLayer *> myList;
     myList << mapLayer;
     QgsProject::instance()->addMapLayers( myList );
-    // add it to the mapcanvas collection
-    // not necessary since adding to registry adds to canvas mMapCanvas->addLayer(theMapLayer);
+
+    askUserForDatumTransform( mapLayer->crs(), QgsProject::instance()->crs() );
   }
   else
   {
@@ -11189,10 +11239,6 @@ void QgisApp::addMapLayer( QgsMapLayer *mapLayer )
   // draw the map
   freezeCanvases( false );
   refreshMapCanvas();
-
-// Let render() do its own cursor management
-//  QApplication::restoreOverrideCursor();
-
 }
 
 void QgisApp::embedLayers()
@@ -13201,6 +13247,8 @@ bool QgisApp::addRasterLayer( QgsRasterLayer *rasterLayer )
   myList << rasterLayer;
   QgsProject::instance()->addMapLayers( myList );
 
+  askUserForDatumTransform( rasterLayer->crs(), QgsProject::instance()->crs() );
+
   return true;
 }
 
@@ -13259,6 +13307,8 @@ QgsRasterLayer *QgisApp::addRasterLayerPrivate(
       // The first layer loaded is not useful in that case. The user can select it in
       // the list if he wants to load it.
       delete layer;
+      for ( QgsMapLayer *l : qgis::as_const( subLayers ) )
+        askUserForDatumTransform( l->crs(), QgsProject::instance()->crs() );
       layer = !subLayers.isEmpty() ? qobject_cast< QgsRasterLayer * >( subLayers.at( 0 ) ) : nullptr;
     }
   }
@@ -14454,7 +14504,7 @@ void QgisApp::populateProjectStorageMenu( QMenu *menu, bool saving )
       }
     }
     const QString filePath = templateDirName + QDir::separator() + templateName + QStringLiteral( ".qgz" );
-    if ( QFileInfo( filePath ).exists() )
+    if ( QFileInfo::exists( filePath ) )
     {
       QMessageBox msgBox( this );
       msgBox.setWindowTitle( tr( "Overwrite template" ) );
