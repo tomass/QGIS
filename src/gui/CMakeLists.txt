@@ -205,24 +205,11 @@ SET(QGIS_GUI_SRCS
   processing/qgsprocessingmatrixparameterdialog.cpp
   processing/qgsprocessingmodelerparameterwidget.cpp
   processing/qgsprocessingmultipleselectiondialog.cpp
-  processing/qgsprocessingparameterdefinitionwidget.cpp
   processing/qgsprocessingrecentalgorithmlog.cpp
   processing/qgsprocessingtoolboxmodel.cpp
   processing/qgsprocessingtoolboxtreeview.cpp
   processing/qgsprocessingwidgetwrapper.cpp
   processing/qgsprocessingwidgetwrapperimpl.cpp
-
-  providers/gdal/qgsgdalsourceselect.cpp
-  providers/gdal/qgsgdalguiprovider.cpp
-
-  providers/ogr/qgsogrguiprovider.cpp
-  providers/ogr/qgsogrdbsourceselect.cpp
-  providers/ogr/qgsogrdbtablemodel.cpp
-  providers/ogr/qgsogrsourceselect.cpp
-  providers/ogr/qgsgeopackageprojectstoragedialog.cpp
-  providers/ogr/qgsgeopackageitemguiprovider.cpp
-  providers/ogr/qgsogritemguiprovider.cpp
-  providers/ogr/qgsgeopackageprojectstorageguiprovider.cpp
 
   qgisinterface.cpp
   qgsactionmenu.cpp
@@ -241,7 +228,6 @@ SET(QGIS_GUI_SRCS
   qgsattributeformrelationeditorwidget.cpp
   qgsblendmodecombobox.cpp
   qgsbrowsertreeview.cpp
-  qgsbrowserguimodel.cpp
   qgsbrowserdockwidget.cpp
   qgsbrowserdockwidget_p.cpp
   qgsbusyindicatordialog.cpp
@@ -263,6 +249,7 @@ SET(QGIS_GUI_SRCS
   qgscolorwidgets.cpp
   qgscompoundcolorwidget.cpp
   qgsconfigureshortcutsdialog.cpp
+  qgscoordinateboundspreviewmapwidget.cpp
   qgscredentialdialog.cpp
   qgscustomdrophandler.cpp
   qgscurveeditorwidget.cpp
@@ -310,7 +297,6 @@ SET(QGIS_GUI_SRCS
   qgshelp.cpp
   qgsidentifymenu.cpp
   qgskeyvaluewidget.cpp
-  qgslabelinggui.cpp
   qgslistwidget.cpp
   qgslegendfilterbutton.cpp
   qgslimitedrandomcolorrampdialog.cpp
@@ -372,9 +358,6 @@ SET(QGIS_GUI_SRCS
   qgsprojectionselectiontreewidget.cpp
   qgspropertyassistantwidget.cpp
   qgspropertyoverridebutton.cpp
-  qgsproviderguiregistry.cpp
-  qgsproviderguimetadata.cpp
-  qgsprojectstorageguiregistry.cpp
   qgsproxystyle.cpp
   qgsquerybuilder.cpp
   qgsrasterformatsaveoptionswidget.cpp
@@ -392,7 +375,6 @@ SET(QGIS_GUI_SRCS
   qgsslider.cpp
   qgssnapindicator.cpp
   qgssnaptogridcanvasitem.cpp
-  qgsstyleitemslistwidget.cpp
   qgssublayersdialog.cpp
   qgssubstitutionlistwidget.cpp
   qgssqlcomposerdialog.cpp
@@ -433,7 +415,6 @@ SET(QGIS_GUI_MOC_HDRS
   qgsattributeformwidget.h
   qgsattributetypeloaddialog.h
   qgsblendmodecombobox.h
-  qgsbrowserguimodel.h
   qgsbrowsertreeview.h
   qgsbusyindicatordialog.h
   qgscharacterselectordialog.h
@@ -454,6 +435,7 @@ SET(QGIS_GUI_MOC_HDRS
   qgscolorwidgets.h
   qgscompoundcolorwidget.h
   qgsconfigureshortcutsdialog.h
+  qgscoordinateboundspreviewmapwidget.h
   qgscredentialdialog.h
   qgscurveeditorwidget.h
   qgscustomdrophandler.h
@@ -497,7 +479,6 @@ SET(QGIS_GUI_MOC_HDRS
   qgshighlight.h
   qgsidentifymenu.h
   qgskeyvaluewidget.h
-  qgslabelinggui.h
   qgslistwidget.h
   qgslegendfilterbutton.h
   qgslimitedrandomcolorrampdialog.h
@@ -575,7 +556,6 @@ SET(QGIS_GUI_MOC_HDRS
   qgssnaptogridcanvasitem.h
   qgssqlcomposerdialog.h
   qgsstatusbar.h
-  qgsstyleitemslistwidget.h
   qgssublayersdialog.h
   qgssubstitutionlistwidget.h
   qgssymbolbutton.h
@@ -781,22 +761,11 @@ SET(QGIS_GUI_MOC_HDRS
   processing/qgsprocessingmatrixparameterdialog.h
   processing/qgsprocessingmodelerparameterwidget.h
   processing/qgsprocessingmultipleselectiondialog.h
-  processing/qgsprocessingparameterdefinitionwidget.h
   processing/qgsprocessingrecentalgorithmlog.h
   processing/qgsprocessingtoolboxmodel.h
   processing/qgsprocessingtoolboxtreeview.h
   processing/qgsprocessingwidgetwrapper.h
   processing/qgsprocessingwidgetwrapperimpl.h
-
-  providers/gdal/qgsgdalsourceselect.h
-  providers/gdal/qgsgdalguiprovider.h
-
-  providers/ogr/qgsogrsourceselect.h
-  providers/ogr/qgsogrdbsourceselect.h
-  providers/ogr/qgsogrdbtablemodel.h
-  providers/ogr/qgsgeopackageprojectstoragedialog.h
-  providers/ogr/qgsgeopackageitemguiprovider.h
-  providers/ogr/qgsogritemguiprovider.h
 )
 FIND_PACKAGE(Qt5Qml REQUIRED)
 FIND_PACKAGE(Qt5QuickWidgets REQUIRED)
@@ -830,9 +799,6 @@ SET(QGIS_GUI_HDRS
   qgsexpressionbuilderdialog.h
   qgsgeometryrubberband.h
   qgsguiutils.h
-  qgsproviderguimetadata.h
-  qgsproviderguiregistry.h
-  qgsprojectstorageguiregistry.h
   qgshelp.h
   qgshighlight.h
   qgsmapcanvasitem.h
@@ -856,7 +822,6 @@ SET(QGIS_GUI_HDRS
   qgssourceselectprovider.h
   qgssourceselectproviderregistry.h
   qgswindowmanagerinterface.h
-  qgsprojectstorageguiprovider.h
 
   ogr/qgsogrhelperfunctions.h
   ogr/qgsnewogrconnection.h
@@ -915,9 +880,6 @@ SET(QGIS_GUI_HDRS
 
   processing/qgsprocessinggui.h
   processing/qgsprocessingguiregistry.h
-
-  providers/ogr/qgsgeopackageprojectstorageguiprovider.h
-  providers/ogr/qgsogrguiprovider.h
 
   raster/qgsrasterrendererwidget.h
 
@@ -992,8 +954,6 @@ INCLUDE_DIRECTORIES(
   ${CMAKE_SOURCE_DIR}/src/gui/layout
   ${CMAKE_SOURCE_DIR}/src/gui/ogr
   ${CMAKE_SOURCE_DIR}/src/gui/processing
-  ${CMAKE_SOURCE_DIR}/src/gui/providers/gdal
-  ${CMAKE_SOURCE_DIR}/src/gui/providers/ogr
   ${CMAKE_SOURCE_DIR}/src/core
   ${CMAKE_SOURCE_DIR}/src/core/annotations
   ${CMAKE_SOURCE_DIR}/src/core/auth
@@ -1007,8 +967,6 @@ INCLUDE_DIRECTORIES(
   ${CMAKE_SOURCE_DIR}/src/core/mesh
   ${CMAKE_SOURCE_DIR}/src/core/pal
   ${CMAKE_SOURCE_DIR}/src/core/providers/memory
-  ${CMAKE_SOURCE_DIR}/src/core/providers/gdal
-  ${CMAKE_SOURCE_DIR}/src/core/providers/ogr
   ${CMAKE_SOURCE_DIR}/src/core/raster
   ${CMAKE_SOURCE_DIR}/src/core/scalebar
   ${CMAKE_SOURCE_DIR}/src/core/symbology

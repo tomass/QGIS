@@ -50,9 +50,6 @@ email                : tim at linfiniti.com
 #include "qgssinglebandpseudocolorrenderer.h"
 #include "qgssettings.h"
 #include "qgssymbollayerutils.h"
-#include "qgsgdalprovider.h"
-#include "qgsbilinearrasterresampler.h"
-#include "qgscubicrasterresampler.h"
 
 #include <cmath>
 #include <cstdio>
@@ -71,6 +68,7 @@ email                : tim at linfiniti.com
 #include <QFrame>
 #include <QImage>
 #include <QLabel>
+#include <QLibrary>
 #include <QList>
 #include <QMatrix>
 #include <QMessageBox>
@@ -79,6 +77,9 @@ email                : tim at linfiniti.com
 #include <QRegExp>
 #include <QSlider>
 #include <QTime>
+
+// typedefs for provider plugin functions of interest
+typedef bool isvalidrasterfilename_t( QString const &fileNameQString, QString &retErrMsg );
 
 #define ERR(message) QGS_ERROR_MESSAGE(message,"Raster layer")
 
@@ -162,7 +163,14 @@ QgsRasterLayer *QgsRasterLayer::clone() const
 
 bool QgsRasterLayer::isValidRasterFileName( const QString &fileNameQString, QString &retErrMsg )
 {
-  bool myIsValid = QgsGdalProvider::isValidRasterFileName( fileNameQString, retErrMsg );
+  isvalidrasterfilename_t *pValid = reinterpret_cast< isvalidrasterfilename_t * >( cast_to_fptr( QgsProviderRegistry::instance()->function( "gdal",  "isValidRasterFileName" ) ) );
+  if ( ! pValid )
+  {
+    QgsDebugMsg( QStringLiteral( "Could not resolve isValidRasterFileName in gdal provider library" ) );
+    return false;
+  }
+
+  bool myIsValid = pValid( fileNameQString, retErrMsg );
   return myIsValid;
 }
 
@@ -744,29 +752,9 @@ void QgsRasterLayer::setDataProvider( QString const &provider, const QgsDataProv
   QgsHueSaturationFilter *hueSaturationFilter = new QgsHueSaturationFilter();
   mPipe.set( hueSaturationFilter );
 
-  // resampler (must be after renderer)
+  //resampler (must be after renderer)
   QgsRasterResampleFilter *resampleFilter = new QgsRasterResampleFilter();
   mPipe.set( resampleFilter );
-
-  if ( mDataProvider->providerCapabilities() & QgsRasterDataProvider::ProviderHintBenefitsFromResampling )
-  {
-    QgsSettings settings;
-    QString resampling = settings.value( QStringLiteral( "/Raster/defaultZoomedInResampling" ), QStringLiteral( "nearest neighbour" ) ).toString();
-    if ( resampling == QStringLiteral( "bilinear" ) )
-    {
-      resampleFilter->setZoomedInResampler( new QgsBilinearRasterResampler() );
-    }
-    else if ( resampling == QStringLiteral( "cubic" ) )
-    {
-      resampleFilter->setZoomedInResampler( new QgsCubicRasterResampler() );
-    }
-    resampling = settings.value( QStringLiteral( "/Raster/defaultZoomedOutResampling" ), QStringLiteral( "nearest neighbour" ) ).toString();
-    if ( resampling == QStringLiteral( "bilinear" ) )
-    {
-      resampleFilter->setZoomedOutResampler( new QgsBilinearRasterResampler() );
-    }
-    resampleFilter->setMaxOversampling( settings.value( QStringLiteral( "/Raster/defaultOversampling" ), 2.0 ).toDouble() );
-  }
 
   // projector (may be anywhere in pipe)
   QgsRasterProjector *projector = new QgsRasterProjector;
@@ -814,25 +802,25 @@ void QgsRasterLayer::setDataSource( const QString &dataSource, const QString &ba
 
   QDomImplementation domImplementation;
   QDomDocumentType documentType;
-  QDomDocument doc;
   QString errorMsg;
-  QDomElement rootNode;
 
   // Store the original style
   if ( wasValid && ! loadDefaultStyleFlag )
   {
     documentType = domImplementation.createDocumentType(
                      QStringLiteral( "qgis" ), QStringLiteral( "http://mrcc.com/qgis.dtd" ), QStringLiteral( "SYSTEM" ) );
-    doc = QDomDocument( documentType );
-    rootNode = doc.createElement( QStringLiteral( "qgis" ) );
-    rootNode.setAttribute( QStringLiteral( "version" ), Qgis::QGIS_VERSION );
-    doc.appendChild( rootNode );
+
+    mOriginalStyleDocument = QDomDocument( documentType );
+    mOriginalStyleElement = mOriginalStyleDocument.createElement( QStringLiteral( "qgis" ) );
+    mOriginalStyleElement.setAttribute( QStringLiteral( "version" ), Qgis::QGIS_VERSION );
+    mOriginalStyleDocument.appendChild( mOriginalStyleElement );
     QgsReadWriteContext writeContext;
-    if ( ! writeSymbology( rootNode, doc, errorMsg, writeContext ) )
+    if ( ! writeSymbology( mOriginalStyleElement, mOriginalStyleDocument, errorMsg, writeContext ) )
     {
       QgsDebugMsg( QStringLiteral( "Could not store symbology for layer %1: %2" )
                    .arg( name() )
                    .arg( errorMsg ) );
+      mOriginalStyleElement = QDomElement();
     }
   }
 
@@ -855,23 +843,31 @@ void QgsRasterLayer::setDataSource( const QString &dataSource, const QString &ba
   {
     // load default style
     bool defaultLoadedFlag = false;
+    bool restoredStyle = false;
     if ( loadDefaultStyleFlag )
     {
       loadDefaultStyle( defaultLoadedFlag );
     }
-    else if ( wasValid && errorMsg.isEmpty() )  // Restore the style
+    else if ( !mOriginalStyleElement.isNull() )  // Restore the style
     {
       QgsReadWriteContext readContext;
-      if ( ! readSymbology( rootNode, errorMsg, readContext ) )
+      if ( ! readSymbology( mOriginalStyleElement, errorMsg, readContext ) )
       {
         QgsDebugMsg( QStringLiteral( "Could not restore symbology for layer %1: %2" )
                      .arg( name() )
                      .arg( errorMsg ) );
 
       }
+      else
+      {
+        restoredStyle = true;
+        emit repaintRequested();
+        emit styleChanged();
+        emit rendererChanged();
+      }
     }
 
-    if ( !defaultLoadedFlag )
+    if ( !defaultLoadedFlag && !restoredStyle )
     {
       setDefaultContrastEnhancement();
     }
@@ -1299,16 +1295,6 @@ void QgsRasterLayer::setSubLayerVisibility( const QString &name, bool vis )
 QDateTime QgsRasterLayer::timestamp() const
 {
   return mDataProvider->timestamp();
-}
-
-bool QgsRasterLayer::accept( QgsStyleEntityVisitorInterface *visitor ) const
-{
-  if ( mPipe.renderer() )
-  {
-    if ( !mPipe.renderer()->accept( visitor ) )
-      return false;
-  }
-  return true;
 }
 
 
@@ -1780,6 +1766,11 @@ bool QgsRasterLayer::readXml( const QDomNode &layer_node, QgsReadWriteContext &c
   QgsDataProvider::ProviderOptions providerOptions { context.transformContext() };
   setDataProvider( mProviderKey, providerOptions );
 
+  mOriginalStyleElement = layer_node.namedItem( QStringLiteral( "originalStyle" ) ).firstChildElement();
+  if ( mOriginalStyleElement.isNull() )
+    mOriginalStyleElement = layer_node.toElement();
+  mOriginalStyleDocument = layer_node.ownerDocument();
+
   if ( ! mDataProvider )
   {
     QgsDebugMsg( QStringLiteral( "Raster data provider could not be created for %1" ).arg( mDataSource ) );
@@ -1880,6 +1871,13 @@ bool QgsRasterLayer::writeSymbology( QDomNode &layer_node, QDomDocument &documen
   }
 
   layer_node.appendChild( pipeElement );
+
+  if ( !isValid() && !mOriginalStyleElement.isNull() )
+  {
+    QDomElement originalStyleElement = document.createElement( QStringLiteral( "originalStyle" ) );
+    originalStyleElement.appendChild( mOriginalStyleElement );
+    layer_node.appendChild( originalStyleElement );
+  }
 
   // add blend mode node
   QDomElement blendModeElement  = document.createElement( QStringLiteral( "blendMode" ) );

@@ -25,7 +25,6 @@
 #include "qgsogcutils.h"
 #include "qgspainteffect.h"
 #include "qgspainteffectregistry.h"
-#include "qgsstyleentityvisitor.h"
 
 #include <QDomDocument>
 #include <QDomElement>
@@ -90,14 +89,6 @@ void QgsInvertedPolygonRenderer::checkLegendSymbolItem( const QString &key, bool
     return;
 
   mSubRenderer->checkLegendSymbolItem( key, state );
-}
-
-bool QgsInvertedPolygonRenderer::accept( QgsStyleEntityVisitorInterface *visitor ) const
-{
-  if ( !mSubRenderer )
-    return true;
-
-  return mSubRenderer->accept( visitor );
 }
 
 void QgsInvertedPolygonRenderer::startRender( QgsRenderContext &context, const QgsFields &fields )

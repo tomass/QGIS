@@ -19,6 +19,7 @@
 
 #include "qgis_core.h"
 #include "qgis_sip.h"
+#include "qgsrectangle.h"
 #include <QString>
 #include <QList>
 
@@ -163,6 +164,12 @@ class CORE_EXPORT QgsDatumTransform
 
       //! Area of use, from EPSG registry database
       QString areaOfUse;
+
+      //! Authority name, e.g. EPSG.
+      QString authority;
+
+      //! Authority code, e.g. "8447" (for EPSG:8447).
+      QString code;
     };
 
     /**
@@ -179,6 +186,22 @@ class CORE_EXPORT QgsDatumTransform
       QString name;
       //! Transformation accuracy (in meters)
       double accuracy = 0;
+
+      /**
+       * Authority name, e.g. EPSG.
+       *
+       * This is only available for single step coordinate operations. For multi-step operations, check
+       * \a operationDetails instead.
+       */
+      QString authority;
+
+      /**
+       * Identification code, e.g. "8447" (For EPSG:8447).
+       *
+       * This is only available for single step coordinate operations. For multi-step operations, check
+       * \a operationDetails instead.
+       */
+      QString code;
 
       /**
        * Scope of operation, from EPSG registry database.
@@ -209,8 +232,16 @@ class CORE_EXPORT QgsDatumTransform
        *
        * This is only available for single step coordinate operations. For multi-step operations, check
        * \a operationDetails instead.
+       *
+       * \see bounds
        */
       QString areaOfUse;
+
+      /**
+       * Valid bounds for the coordinate operation.
+       * \see areaOfUse
+       */
+      QgsRectangle bounds;
 
       /**
        * Contains a list of transform grids used by the operation.

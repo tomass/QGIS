@@ -32,12 +32,14 @@ class QgsWfsRootItem : public QgsDataCollectionItem
     QVariant sortKey() const override { return 9; }
 
 #ifdef HAVE_GUI
+    QList<QAction *> actions( QWidget *parent ) override;
     QWidget *paramWidget() override;
 #endif
 
   public slots:
 #ifdef HAVE_GUI
     void onConnectionsChanged();
+    void newConnection();
 #endif
 };
 
@@ -51,6 +53,16 @@ class QgsWfsConnectionItem : public QgsDataCollectionItem
 
     QVector<QgsDataItem *> createChildren() override;
     //virtual bool equal( const QgsDataItem *other );
+
+#ifdef HAVE_GUI
+    QList<QAction *> actions( QWidget *parent ) override;
+#endif
+
+  private slots:
+#ifdef HAVE_GUI
+    void editConnection();
+    void deleteConnection();
+#endif
 
   private:
     QString mUri;
@@ -89,9 +101,9 @@ class QgsWfsLayerItem : public QgsLayerItem
 class QgsWfsDataItemProvider : public QgsDataItemProvider
 {
   public:
-    QString name() override;
+    QString name() override { return QStringLiteral( "WFS" ); }
 
-    int capabilities() const override;
+    int capabilities() override { return QgsDataProvider::Net; }
 
     QgsDataItem *createDataItem( const QString &path, QgsDataItem *parentItem ) override;
 

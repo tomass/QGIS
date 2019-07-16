@@ -32,8 +32,6 @@
 #include "qgsogrutils.h"
 #include "qgsapplication.h"
 
-#include "qgsprovidermetadata.h"
-
 #include <QString>
 #include <QStringList>
 #include <QDomElement>
@@ -110,9 +108,6 @@ class QgsWcsProvider : public QgsRasterDataProvider, QgsGdalProviderBase
     Q_OBJECT
 
   public:
-
-    static QString WCS_KEY;
-    static QString WCS_DESCRIPTION;
 
     /**
      * Constructor for the provider.
@@ -434,13 +429,6 @@ class QgsWcsDownloadHandler : public QObject
     static int sErrors; // this should be ideally per-provider...?
 };
 
-class QgsWcsProviderMetadata: public QgsProviderMetadata
-{
-  public:
-    QgsWcsProviderMetadata();
-    QgsWcsProvider *createProvider( const QString &uri, const QgsDataProvider::ProviderOptions &options ) override;
-    QList<QgsDataItemProvider *> dataItemProviders() const override;
-};
 
 #endif
 

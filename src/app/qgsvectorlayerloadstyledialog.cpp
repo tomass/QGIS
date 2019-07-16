@@ -24,7 +24,6 @@
 #include "qgsmaplayerstylecategoriesmodel.h"
 #include "qgsmessagebar.h"
 #include "qgsapplication.h"
-#include "qgsgui.h"
 
 
 QgsVectorLayerLoadStyleDialog::QgsVectorLayerLoadStyleDialog( QgsVectorLayer *layer, QWidget *parent )
@@ -32,7 +31,6 @@ QgsVectorLayerLoadStyleDialog::QgsVectorLayerLoadStyleDialog( QgsVectorLayer *la
   , mLayer( layer )
 {
   setupUi( this );
-  QgsGui::instance()->enableAutoGeometryRestore( this );
   setWindowTitle( QStringLiteral( "Database styles manager" ) );
 
   mDeleteButton = mButtonBox->button( QDialogButtonBox::StandardButton::Close );
@@ -120,7 +118,13 @@ QgsVectorLayerLoadStyleDialog::QgsVectorLayerLoadStyleDialog( QgsVectorLayer *la
 
   setTabOrder( mRelatedTable, mOthersTable );
 
+  restoreGeometry( settings.value( QStringLiteral( "Windows/vectorLayerLoadStyle/geometry" ) ).toByteArray() );
   mStyleCategoriesListView->adjustSize();
+}
+
+QgsVectorLayerLoadStyleDialog::~QgsVectorLayerLoadStyleDialog()
+{
+  QgsSettings().setValue( QStringLiteral( "Windows/vectorLayerLoadStyle/geometry" ), saveGeometry() );
 }
 
 QgsMapLayer::StyleCategories QgsVectorLayerLoadStyleDialog::styleCategories() const

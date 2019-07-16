@@ -55,7 +55,6 @@
 #include "qgssymbollayerutils.h"
 #include "qgsapplication.h"
 #include "qgsexpressioncontextutils.h"
-#include "qgsstyleentityvisitor.h"
 
 #include <QApplication>
 #include <QFileInfo>
@@ -3069,32 +3068,4 @@ QString QgsProject::translate( const QString &context, const QString &sourceText
     return sourceText;
   }
   return result;
-}
-
-bool QgsProject::accept( QgsStyleEntityVisitorInterface *visitor ) const
-{
-  const QMap<QString, QgsMapLayer *> layers = mapLayers();
-  if ( !layers.empty() )
-  {
-    for ( auto it = layers.constBegin(); it != layers.constEnd(); ++it )
-    {
-      // NOTE: if visitEnter returns false it means "don't visit this layer", not "abort all further visitations"
-      if ( visitor->visitEnter( QgsStyleEntityVisitorInterface::Node( QgsStyleEntityVisitorInterface::NodeType::Layer, ( *it )->id(), ( *it )->name() ) ) )
-      {
-        if ( !( ( *it )->accept( visitor ) ) )
-          return false;
-
-        if ( !visitor->visitExit( QgsStyleEntityVisitorInterface::Node( QgsStyleEntityVisitorInterface::NodeType::Layer, ( *it )->id(), ( *it )->name() ) ) )
-          return false;
-      }
-    }
-  }
-
-  if ( !mLayoutManager->accept( visitor ) )
-    return false;
-
-  if ( !mAnnotationManager->accept( visitor ) )
-    return false;
-
-  return true;
 }

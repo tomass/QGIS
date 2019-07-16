@@ -19,7 +19,6 @@
 #include "qgslogger.h"
 #include "qgsrectangle.h"
 #include "qgsproperty.h"
-#include "qgssymbollayerutils.h"
 
 QgsUnitTypes::DistanceUnit QgsXmlUtils::readMapUnits( const QDomElement &element )
 {
@@ -165,11 +164,6 @@ QDomElement QgsXmlUtils::writeVariant( const QVariant &value, QDomDocument &doc 
       element.setAttribute( QStringLiteral( "value" ), value.toString() );
       break;
 
-    case QVariant::Color:
-      element.setAttribute( QStringLiteral( "type" ), QStringLiteral( "color" ) );
-      element.setAttribute( QStringLiteral( "value" ), value.value< QColor >().isValid() ? QgsSymbolLayerUtils::encodeColor( value.value< QColor >() ) : QString() );
-      break;
-
     case QVariant::UserType:
     {
       if ( value.canConvert< QgsProperty >() )
@@ -239,10 +233,6 @@ QVariant QgsXmlUtils::readVariant( const QDomElement &element )
   else if ( type == QLatin1String( "bool" ) )
   {
     return element.attribute( QStringLiteral( "value" ) ) == QLatin1String( "true" );
-  }
-  else if ( type == QLatin1String( "color" ) )
-  {
-    return element.attribute( QStringLiteral( "value" ) ).isEmpty() ? QColor() : QgsSymbolLayerUtils::decodeColor( element.attribute( QStringLiteral( "value" ) ) );
   }
   else if ( type == QLatin1String( "Map" ) )
   {

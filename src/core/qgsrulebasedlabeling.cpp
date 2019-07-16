@@ -14,7 +14,6 @@
  ***************************************************************************/
 #include "qgsrulebasedlabeling.h"
 #include "qgssymbollayerutils.h"
-#include "qgsstyleentityvisitor.h"
 
 QgsRuleBasedLabelProvider::QgsRuleBasedLabelProvider( const QgsRuleBasedLabeling &rules, QgsVectorLayer *layer, bool withFeatureLoop )
   : QgsVectorLayerLabelProvider( layer, QString(), withFeatureLoop, nullptr )
@@ -131,34 +130,6 @@ bool QgsRuleBasedLabeling::Rule::requiresAdvancedEffects() const
   }
 
   return false;
-}
-
-bool QgsRuleBasedLabeling::Rule::accept( QgsStyleEntityVisitorInterface *visitor ) const
-{
-  // NOTE: if visitEnter returns false it means "don't visit the rule", not "abort all further visitations"
-  if ( mParent && !visitor->visitEnter( QgsStyleEntityVisitorInterface::Node( QgsStyleEntityVisitorInterface::NodeType::SymbolRule, mRuleKey, mDescription ) ) )
-    return true;
-
-  if ( mSettings )
-  {
-    QgsStyleLabelSettingsEntity entity( *mSettings );
-    if ( !visitor->visit( QgsStyleEntityVisitorInterface::StyleLeaf( &entity ) ) )
-      return false;
-  }
-
-  if ( !mChildren.empty() )
-  {
-    for ( const Rule *rule : mChildren )
-    {
-      if ( !rule->accept( visitor ) )
-        return false;
-    }
-  }
-
-  if ( mParent && !visitor->visitExit( QgsStyleEntityVisitorInterface::Node( QgsStyleEntityVisitorInterface::NodeType::SymbolRule, mRuleKey, mDescription ) ) )
-    return false;
-
-  return true;
 }
 
 void QgsRuleBasedLabeling::Rule::subProviderIds( QStringList &list ) const
@@ -501,11 +472,6 @@ QgsPalLayerSettings QgsRuleBasedLabeling::settings( const QString &providerId ) 
     return *rule->settings();
 
   return QgsPalLayerSettings();
-}
-
-bool QgsRuleBasedLabeling::accept( QgsStyleEntityVisitorInterface *visitor ) const
-{
-  return mRootRule->accept( visitor );
 }
 
 bool QgsRuleBasedLabeling::requiresAdvancedEffects() const

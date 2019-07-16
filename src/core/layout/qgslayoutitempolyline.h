@@ -189,8 +189,6 @@ class CORE_EXPORT QgsLayoutItemPolyline: public QgsLayoutNodesItem
      */
     double arrowHeadStrokeWidth() const { return mArrowHeadStrokeWidth; }
 
-    bool accept( QgsStyleEntityVisitorInterface *visitor ) const override;
-
   protected:
 
     bool _addNode( int indexPoint, QPointF newPoint, double radius ) override;

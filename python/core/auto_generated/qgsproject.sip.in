@@ -976,8 +976,6 @@ Returns the current auxiliary storage.
 .. versionadded:: 3.0
 %End
 
-
-
     const QgsProjectMetadata &metadata() const;
 %Docstring
 Returns a reference to the project's metadata store.
@@ -1053,17 +1051,6 @@ Translates the project with QTranslator and qm file
 :param n: if -1 uses the appropriate form
 
 .. versionadded:: 3.4
-%End
-
-    bool accept( QgsStyleEntityVisitorInterface *visitor ) const;
-%Docstring
-Accepts the specified style entity ``visitor``, causing it to visit all style entities associated
-with the project.
-
-Returns ``True`` if the visitor should continue visiting other objects, or ``False`` if visiting
-should be canceled.
-
-.. versionadded:: 3.10
 %End
 
   signals:
@@ -1404,7 +1391,6 @@ Emitted when the project dirty status changes.
 
 .. versionadded:: 3.2
 %End
-
 
   public slots:
 

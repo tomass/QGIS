@@ -537,18 +537,46 @@ QgsCoordinateReferenceSystem QgsGPXProvider::crs() const
   return QgsCoordinateReferenceSystem( GEOSRID, QgsCoordinateReferenceSystem::PostgisCrsId ); // use WGS84
 }
 
-QgsDataProvider *QgsGpxProviderMetadata::createProvider( const QString &uri, const QgsDataProvider::ProviderOptions &options )
+
+
+
+
+
+/**
+ * Class factory to return a pointer to a newly created
+ * QgsGPXProvider object
+ */
+QGISEXTERN QgsGPXProvider *classFactory( const QString *uri, const QgsDataProvider::ProviderOptions &options )
 {
-  return new QgsGPXProvider( uri, options );
+  return new QgsGPXProvider( *uri, options );
 }
 
 
-QgsGpxProviderMetadata::QgsGpxProviderMetadata():
-  QgsProviderMetadata( GPX_KEY, GPX_DESCRIPTION )
+/**
+ * Required key function (used to map the plugin to a data store type)
+*/
+QGISEXTERN QString providerKey()
 {
+  return GPX_KEY;
 }
 
-QGISEXTERN QgsProviderMetadata *providerMetadataFactory()
+
+/**
+ * Required description function
+ */
+QGISEXTERN QString description()
 {
-  return new QgsGpxProviderMetadata();
+  return GPX_DESCRIPTION;
 }
+
+
+/**
+ * Required isProvider function. Used to determine if this shared library
+ * is a data provider plugin
+ */
+QGISEXTERN bool isProvider()
+{
+  return true;
+}
+
+

@@ -5,7 +5,6 @@ ENDIF(NOT WIN32)
 
 SET(QGIS_APP_SRCS
   ${CMAKE_SOURCE_DIR}/external/nmea/gmath.c
-  ${CMAKE_SOURCE_DIR}/external/nmea/time.c
 
   qgisapp.cpp
   qgisappinterface.cpp
@@ -53,6 +52,7 @@ SET(QGIS_APP_SRCS
   qgsfeatureaction.cpp
   qgslabelpropertydialog.cpp
   qgslabelengineconfigdialog.cpp
+  qgslabelinggui.cpp
   qgslabelingwidget.cpp
   qgslayercapabilitiesmodel.cpp
   qgslayertreeviewindicatorprovider.cpp
@@ -65,7 +65,6 @@ SET(QGIS_APP_SRCS
   qgsmaplayerstylecategoriesmodel.cpp
   qgsmaplayerstyleguiutils.cpp
   qgsmapsavedialog.cpp
-  qgsprojectlistitemdelegate.cpp
   qgspuzzlewidget.cpp
   qgsversionmigration.cpp
   qgsrulebasedlabelingwidget.cpp
@@ -74,10 +73,9 @@ SET(QGIS_APP_SRCS
   qgsstatusbarcoordinateswidget.cpp
   qgsstatusbarmagnifierwidget.cpp
   qgsstatusbarscalewidget.cpp
-  qgstemplateprojectsmodel.cpp
   qgsvectorlayerloadstyledialog.cpp
   qgsversioninfo.cpp
-  qgsrecentprojectsitemsmodel.cpp
+  qgswelcomepageitemsmodel.cpp
   qgswelcomepage.cpp
 
   qgsmaptooladdfeature.cpp
@@ -293,6 +291,7 @@ SET (QGIS_APP_MOC_HDRS
   qgshtmlannotationdialog.h
   qgsidentifyresultsdialog.h
   qgslabelengineconfigdialog.h
+  qgslabelinggui.h
   qgslabelingwidget.h
   qgslabelpropertydialog.h
   qgslayercapabilitiesmodel.h
@@ -307,17 +306,15 @@ SET (QGIS_APP_MOC_HDRS
   qgsmaplayerstyleguiutils.h
   qgsmapsavedialog.h
   qgspuzzlewidget.h
-  qgsprojectlistitemdelegate.h
   qgsrulebasedlabelingwidget.h
   qgssnappinglayertreemodel.h
   qgssnappingwidget.h
   qgsstatusbarcoordinateswidget.h
   qgsstatusbarmagnifierwidget.h
   qgsstatusbarscalewidget.h
-  qgstemplateprojectsmodel.h
   qgsvectorlayerloadstyledialog.h
   qgsversioninfo.h
-  qgsrecentprojectsitemsmodel.h
+  qgswelcomepageitemsmodel.h
   qgswelcomepage.h
 
   qgsmaptooladdfeature.h
@@ -490,7 +487,6 @@ IF (WITH_3D)
     3d/qgs3dmapconfigwidget.cpp
     3d/qgs3dmaptool.cpp
     3d/qgs3dmaptoolidentify.cpp
-    3d/qgs3dnavigationwidget.cpp
     3d/qgslightswidget.cpp
     3d/qgsline3dsymbolwidget.cpp
     3d/qgsmesh3dsymbolwidget.cpp
@@ -513,7 +509,6 @@ IF (WITH_3D)
     3d/qgs3dmapconfigwidget.h
     3d/qgs3dmaptool.h
     3d/qgs3dmaptoolidentify.h
-    3d/qgs3dnavigationwidget.h
     3d/qgslightswidget.h
     3d/qgsline3dsymbolwidget.h
     3d/qgsmesh3dsymbolwidget.h

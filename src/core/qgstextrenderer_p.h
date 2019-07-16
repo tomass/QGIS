@@ -64,6 +64,11 @@ class QgsTextBufferSettingsPrivate : public QSharedData
     {
     }
 
+    ~QgsTextBufferSettingsPrivate()
+    {
+      delete paintEffect;
+    }
+
     bool enabled = false;
     double size = 1;
     QgsUnitTypes::RenderUnit sizeUnit = QgsUnitTypes::RenderMillimeters;
@@ -73,7 +78,7 @@ class QgsTextBufferSettingsPrivate : public QSharedData
     bool fillBufferInterior = false;
     Qt::PenJoinStyle joinStyle = Qt::RoundJoin;
     QPainter::CompositionMode blendMode = QPainter::CompositionMode_SourceOver;
-    std::unique_ptr< QgsPaintEffect > paintEffect;
+    QgsPaintEffect *paintEffect = nullptr;
 };
 
 
@@ -116,8 +121,12 @@ class QgsTextBackgroundSettingsPrivate : public QSharedData
       , strokeWidthMapUnitScale( other.strokeWidthMapUnitScale )
       , joinStyle( other.joinStyle )
       , paintEffect( other.paintEffect ? other.paintEffect->clone() : nullptr )
-      , markerSymbol( other.markerSymbol ? other.markerSymbol->clone() : nullptr )
     {
+    }
+
+    ~QgsTextBackgroundSettingsPrivate()
+    {
+      delete paintEffect;
     }
 
     bool enabled = false;
@@ -143,8 +152,7 @@ class QgsTextBackgroundSettingsPrivate : public QSharedData
     QgsUnitTypes::RenderUnit strokeWidthUnits = QgsUnitTypes::RenderMillimeters;
     QgsMapUnitScale strokeWidthMapUnitScale;
     Qt::PenJoinStyle joinStyle = Qt::BevelJoin;
-    std::unique_ptr< QgsPaintEffect > paintEffect;
-    std::unique_ptr< QgsMarkerSymbol > markerSymbol;
+    QgsPaintEffect *paintEffect = nullptr;
 };
 
 
@@ -217,7 +225,6 @@ class QgsTextSettingsPrivate : public QSharedData
       , opacity( other.opacity )
       , blendMode( other.blendMode )
       , multilineHeight( other.multilineHeight )
-      , previewBackgroundColor( other.previewBackgroundColor )
     {
     }
 
@@ -230,7 +237,6 @@ class QgsTextSettingsPrivate : public QSharedData
     double opacity = 1.0;
     QPainter::CompositionMode blendMode = QPainter::CompositionMode_SourceOver;
     double multilineHeight = 1.0 ; //0.0 to 10.0, leading between lines as multiplyer of line height
-    QColor previewBackgroundColor = Qt::white;
 
 };
 

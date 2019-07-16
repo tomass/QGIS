@@ -347,10 +347,10 @@ QgsApplication::~QgsApplication()
   // is destroyed before the static variables of the cache, we might use freed memory.
 
   // we do this here as well as in exitQgis() -- it's safe to call as often as we want,
-  // and there's just a *chance* that in between an exitQgis call and this destructor
-  // something else's destructor has caused a new entry in the caches...
-  QgsCoordinateTransform::invalidateCache();
-  QgsCoordinateReferenceSystem::invalidateCache();
+  // and there's just a *chance* that someone hasn't properly called exitQgis prior to
+  // this destructor...
+  QgsCoordinateTransform::invalidateCache( true );
+  QgsCoordinateReferenceSystem::invalidateCache( true );
 }
 
 QgsApplication *QgsApplication::instance()
@@ -954,11 +954,19 @@ QString QgsApplication::srsDatabaseFilePath()
 {
   if ( ABISYM( mRunningFromBuildDir ) )
   {
+#if PROJ_VERSION_MAJOR>=6
+    QString tempCopy = QDir::tempPath() + "/srs6.db";
+#else
     QString tempCopy = QDir::tempPath() + "/srs.db";
+#endif
 
     if ( !QFile( tempCopy ).exists() )
     {
+#if PROJ_VERSION_MAJOR>=6
+      QFile f( pkgDataPath() + "/resources/srs6.db" );
+#else
       QFile f( pkgDataPath() + "/resources/srs.db" );
+#endif
       if ( !f.copy( tempCopy ) )
       {
         qFatal( "Could not create temporary copy" );
@@ -1096,6 +1104,14 @@ QString QgsApplication::osName()
   return QLatin1String( "windows" );
 #elif defined(Q_OS_LINUX)
   return QStringLiteral( "linux" );
+#elif defined(Q_OS_FREEBSD)
+  return QStringLiteral( "freebsd" );
+#elif defined(Q_OS_OPENBSD)
+  return QStringLiteral( "openbsd" );
+#elif defined(Q_OS_NETBSD)
+  return QStringLiteral( "netbsd" );
+#elif defined(Q_OS_UNIX)
+  return QLatin1String( "unix" );
 #else
   return QLatin1String( "unknown" );
 #endif
@@ -1237,11 +1253,11 @@ void QgsApplication::exitQgis()
   if ( QgsProviderRegistry::exists() )
     delete QgsProviderRegistry::instance();
 
-  // invalidate coordinate cache while the PROJ context held by the thread-locale
+  // invalidate coordinate cache AND DISABLE THEM! while the PROJ context held by the thread-locale
   // QgsProjContextStore object is still alive. Otherwise if this later object
   // is destroyed before the static variables of the cache, we might use freed memory.
-  QgsCoordinateTransform::invalidateCache();
-  QgsCoordinateReferenceSystem::invalidateCache();
+  QgsCoordinateTransform::invalidateCache( true );
+  QgsCoordinateReferenceSystem::invalidateCache( true );
 
   QgsStyle::cleanDefaultStyle();
 

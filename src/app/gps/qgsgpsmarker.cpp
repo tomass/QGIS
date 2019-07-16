@@ -14,15 +14,12 @@
  ***************************************************************************/
 
 #include <QPainter>
-#include <QObject>
 
 #include "qgsgpsmarker.h"
 #include "qgscoordinatetransform.h"
 #include "qgsmapcanvas.h"
 #include "qgsexception.h"
 #include "qgsproject.h"
-#include "qgsmessagelog.h"
-
 
 QgsGpsMarker::QgsGpsMarker( QgsMapCanvas *mapCanvas )
   : QgsMapCanvasItem( mapCanvas )
@@ -30,6 +27,10 @@ QgsGpsMarker::QgsGpsMarker( QgsMapCanvas *mapCanvas )
   mSize = 16;
   mWgs84CRS = QgsCoordinateReferenceSystem::fromOgcWmsCrs( QStringLiteral( "EPSG:4326" ) );
   mSvg.load( QStringLiteral( ":/images/north_arrows/gpsarrow2.svg" ) );
+  if ( ! mSvg.isValid() )
+  {
+    qDebug( "GPS marker not found!" );
+  }
 }
 
 void QgsGpsMarker::setSize( int size )
@@ -49,7 +50,7 @@ void QgsGpsMarker::setCenter( const QgsPointXY &point )
     }
     catch ( QgsCsException &e ) //silently ignore transformation exceptions
     {
-      QgsMessageLog::logMessage( QObject::tr( "Error transforming the map center point: %1" ).arg( e.what() ), QStringLiteral( "GPS" ), Qgis::Warning );
+      Q_UNUSED( e )
       return;
     }
   }
@@ -74,15 +75,15 @@ void QgsGpsMarker::paint( QPainter *p )
   QPointF pt = toCanvasCoordinates( mCenter );
   setPos( pt );
 
-  double halfSize = mSize / 2.0;
-  mSvg.render( p, QRectF( 0 - halfSize, 0 - halfSize, mSize, mSize ) );
+  float myHalfSize = mSize / 2.0;
+  mSvg.render( p, QRectF( 0 - myHalfSize, 0 - myHalfSize, mSize, mSize ) );
 }
 
 
 QRectF QgsGpsMarker::boundingRect() const
 {
-  double halfSize = mSize / 2.0;
-  return QRectF( -halfSize, -halfSize, 2.0 * halfSize, 2.0 * halfSize );
+  float myHalfSize = mSize / 2.0;
+  return QRectF( -myHalfSize, -myHalfSize, 2.0 * myHalfSize, 2.0 * myHalfSize );
 }
 
 void QgsGpsMarker::updatePosition()

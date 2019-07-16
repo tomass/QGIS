@@ -20,7 +20,6 @@
 #include "qgsnetworkaccessmanager.h"
 #include "qgsmessagelog.h"
 #include "qgsapplication.h"
-#include "qgsauthmanager.h"
 #include <QNetworkReply>
 #include <QTextCodec>
 
@@ -37,24 +36,13 @@ QgsNetworkContentFetcher::~QgsNetworkContentFetcher()
   }
 }
 
-void QgsNetworkContentFetcher::fetchContent( const QUrl &url, const QString &authcfg )
+void QgsNetworkContentFetcher::fetchContent( const QUrl &url )
 {
-  QNetworkRequest req( url );
-  QgsSetRequestInitiatorClass( req, QStringLiteral( "QgsNetworkContentFetcher" ) );
-
-  fetchContent( req, authcfg );
+  fetchContent( QNetworkRequest( url ) );
 }
 
-void QgsNetworkContentFetcher::fetchContent( const QNetworkRequest &r, const QString &authcfg )
+void QgsNetworkContentFetcher::fetchContent( const QNetworkRequest &request )
 {
-  QNetworkRequest request( r );
-
-  mAuthCfg = authcfg;
-  if ( !mAuthCfg.isEmpty() )
-  {
-    QgsApplication::authManager()->updateNetworkRequest( request, mAuthCfg );
-  }
-
   mContentLoaded = false;
   mIsCanceled = false;
 
@@ -67,10 +55,6 @@ void QgsNetworkContentFetcher::fetchContent( const QNetworkRequest &r, const QSt
   }
 
   mReply = QgsNetworkAccessManager::instance()->get( request );
-  if ( !mAuthCfg.isEmpty() )
-  {
-    QgsApplication::authManager()->updateNetworkReply( mReply, mAuthCfg );
-  }
   mReply->setParent( nullptr ); // we don't want thread locale QgsNetworkAccessManagers to delete the reply - we want ownership of it to belong to this object
   connect( mReply, &QNetworkReply::finished, this, [ = ] { contentLoaded(); } );
   connect( mReply, &QNetworkReply::downloadProgress, this, &QgsNetworkContentFetcher::downloadProgress );
@@ -186,7 +170,7 @@ void QgsNetworkContentFetcher::contentLoaded( bool ok )
 
   //redirect, so fetch redirect target
   mReply->deleteLater();
-  fetchContent( redirect.toUrl(), mAuthCfg );
+  fetchContent( redirect.toUrl() );
 }
 
 

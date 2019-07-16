@@ -19,8 +19,8 @@
 #include "qgslayouttable.h"
 #include "qgslayout.h"
 #include "qgssettings.h"
-#include "qgshelp.h"
 #include "qgsgui.h"
+#include "qgshelp.h"
 
 #include <QCheckBox>
 #include <QPushButton>

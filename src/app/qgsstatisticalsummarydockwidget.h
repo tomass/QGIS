@@ -29,7 +29,7 @@
 #include "qgis_app.h"
 
 class QMenu;
-class QgsBrowserGuiModel;
+class QgsBrowserModel;
 class QModelIndex;
 class QgsDockBrowserTreeView;
 class QgsLayerItem;

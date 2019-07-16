@@ -17,24 +17,23 @@
 #include <QString>
 
 #include "qgsgrassrasterprovider.h"
-#include "qgsprovidermetadata.h"
 
-static const QString PROVIDER_KEY = QStringLiteral( "grassraster" );
-static const QString PROVIDER_DESCRIPTION = QStringLiteral( "GRASS %1 raster provider" ).arg( GRASS_VERSION_MAJOR );
-
-class QgsGrassRasterProviderMetadata: public QgsProviderMetadata
+QGISEXTERN QgsGrassRasterProvider *classFactory( const QString *uri )
 {
-  public:
-    QgsGrassRasterProviderMetadata(): QgsProviderMetadata( PROVIDER_KEY, PROVIDER_DESCRIPTION ) {}
-    QgsGrassRasterProvider *createProvider( const QString &uri, const QgsDataProvider::ProviderOptions &options ) override
-    {
-      Q_UNUSED( options );
-      return new QgsGrassRasterProvider( uri );
-    }
-};
-
-QGISEXTERN QgsProviderMetadata *providerMetadataFactory()
-{
-  return new QgsGrassRasterProviderMetadata();
+  return new QgsGrassRasterProvider( *uri );
 }
 
+QGISEXTERN QString providerKey()
+{
+  return QStringLiteral( "grassraster" );
+}
+
+QGISEXTERN QString description()
+{
+  return QStringLiteral( "GRASS %1 raster provider" ).arg( GRASS_VERSION_MAJOR );
+}
+
+QGISEXTERN bool isProvider()
+{
+  return true;
+}

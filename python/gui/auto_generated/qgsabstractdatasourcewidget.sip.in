@@ -11,7 +11,6 @@
 
 
 
-
 class QgsAbstractDataSourceWidget : QDialog
 {
 %Docstring
@@ -49,6 +48,7 @@ Triggered when the add button is clicked, the add layer signal is emitted
 Concrete classes should implement the right behavior depending on the layer
 being added.
 %End
+
 
   signals:
 

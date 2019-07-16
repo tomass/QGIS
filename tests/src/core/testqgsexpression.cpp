@@ -591,6 +591,11 @@ class TestQgsExpression: public QObject
       QTest::newRow( "'1E-23'!='1E-23'" ) << "'1E-23'!='1E-23'" << false << QVariant( 0 );
       QTest::newRow( "'1E-23'='2E-23'" ) << "'1E-23'='2E-23'" << false << QVariant( 0 );
       QTest::newRow( "'1E-23'!='2E-23'" ) << "'1E-23'!='2E-23'" << false << QVariant( 1 );
+      QTest::newRow( "to_interval('1 minute') < to_interval('20 days')" ) << "to_interval('1 minute') < to_interval('20 days')" << false << QVariant( 1 );
+      QTest::newRow( "to_interval('1 minute') > to_interval('20 days')" ) << "to_interval('1 minute') > to_interval('20 days')" << false << QVariant( 0 );
+      QTest::newRow( "to_interval('1 minute') = to_interval('20 days')" ) << "to_interval('1 minute') = to_interval('20 days')" << false << QVariant( 0 );
+      QTest::newRow( "to_interval('1 minute') != to_interval('20 days')" ) << "to_interval('1 minute') != to_interval('20 days')" << false << QVariant( 1 );
+      QTest::newRow( "to_interval('1 minute') = to_interval('60 seconds')" ) << "to_interval('1 minute') = to_interval('60 seconds')" << false << QVariant( 1 );
 
       // is, is not
       QTest::newRow( "is null,null" ) << "null is null" << false << QVariant( 1 );
@@ -1600,36 +1605,6 @@ class TestQgsExpression: public QObject
       QgsExpression exp5( QStringLiteral( "attribute('col1')" ) );
       v = exp5.evaluate( &context );
       QCOMPARE( v.toString(), QString( "test value" ) );
-    }
-
-    void eval_feature_attributes()
-    {
-      QgsFeature f( 100 );
-      QgsFields fields;
-      fields.append( QgsField( QStringLiteral( "col1" ) ) );
-      fields.append( QgsField( QStringLiteral( "second_column" ), QVariant::Int ) );
-      f.setFields( fields, true );
-      f.setAttribute( QStringLiteral( "col1" ), QStringLiteral( "test value" ) );
-      f.setAttribute( QStringLiteral( "second_column" ), 5 );
-      QgsExpression exp( QStringLiteral( "attributes()['col1']" ) );
-      QgsExpressionContext context = QgsExpressionContextUtils::createFeatureBasedContext( f, QgsFields() );
-      QVariant v = exp.evaluate( &context );
-      QCOMPARE( v.toString(), QString( "test value" ) );
-      QgsExpression exp2( QStringLiteral( "attributes()['second_column']" ) );
-      v = exp2.evaluate( &context );
-      QCOMPARE( v.toInt(), 5 );
-
-      QgsExpression exp3( QStringLiteral( "attributes($currentfeature)['col1']" ) );
-      v = exp.evaluate( &context );
-      QCOMPARE( v.toString(), QString( "test value" ) );
-      QgsExpression exp4( QStringLiteral( "attributes($currentfeature)['second_column']" ) );
-      v = exp4.evaluate( &context );
-      QCOMPARE( v.toInt(), 5 );
-
-      QgsExpression exp5( QStringLiteral( "attributes('a')" ) );
-      v = exp5.evaluate( &context );
-      QVERIFY( v.isNull() );
-      QVERIFY( exp5.hasEvalError() );
     }
 
     void eval_get_feature_data()

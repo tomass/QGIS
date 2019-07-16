@@ -34,6 +34,7 @@ SET (AFS_SRCS
   qgsafsdataitems.cpp
   qgsafsfeatureiterator.cpp
   qgsafsprovider.cpp
+  qgsafsproviderextern.cpp
   qgsafsshareddata.cpp
 )
 SET (AFS_MOC_HDRS
@@ -45,13 +46,10 @@ SET (AFS_MOC_HDRS
 
 IF (WITH_GUI)
   SET(AFS_SRCS ${AFS_SRCS}
-    qgsafsprovidergui.cpp
-    qgsafsdataitemguiprovider.cpp
     qgsafssourceselect.cpp
     qgsarcgisservicesourceselect.cpp
   )
   SET(AFS_MOC_HDRS ${AFS_MOC_HDRS}
-    qgsafsdataitemguiprovider.h
     qgsafssourceselect.h
     qgsarcgisservicesourceselect.h
   )
@@ -91,6 +89,7 @@ SET (AMS_SRCS
   qgsarcgisrestutils.cpp
   qgsamsdataitems.cpp
   qgsamsprovider.cpp
+  qgsamsproviderextern.cpp
 )
 SET (AMS_MOC_HDRS
   qgsarcgisrestutils.h
@@ -100,13 +99,10 @@ SET (AMS_MOC_HDRS
 
 IF (WITH_GUI)
   SET(AMS_SRCS ${AMS_SRCS}
-    qgsamsprovidergui.cpp
-    qgsamsdataitemguiprovider.cpp
     qgsamssourceselect.cpp
     qgsarcgisservicesourceselect.cpp
   )
   SET(AMS_MOC_HDRS ${AMS_MOC_HDRS}
-    qgsamsdataitemguiprovider.h
     qgsamssourceselect.h
     qgsarcgisservicesourceselect.h
   )

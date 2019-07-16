@@ -40,7 +40,6 @@ Abstract base class for spatial data provider implementations.
 %End
   public:
 
-
     enum DataCapability
     {
       NoDataCapabilities,
@@ -49,8 +48,6 @@ Abstract base class for spatial data provider implementations.
       Database,
       Net
     };
-    typedef QFlags<QgsDataProvider::DataCapability> DataCapabilities;
-
 
     enum ProviderProperty
     {

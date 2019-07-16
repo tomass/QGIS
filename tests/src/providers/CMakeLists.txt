@@ -26,6 +26,7 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}
 INCLUDE_DIRECTORIES(SYSTEM
   ${QT_INCLUDE_DIR}
   ${GDAL_INCLUDE_DIR}
+  ${GEOS_INCLUDE_DIR}
   ${MDAL_INCLUDE_DIR}
   ${QCA_INCLUDE_DIR}
   ${QTKEYCHAIN_INCLUDE_DIR}
@@ -73,9 +74,14 @@ SET_TARGET_PROPERTIES(qgis_wcsprovidertest PROPERTIES
 ADD_QGIS_TEST(arcgisrestutilstest testqgsarcgisrestutils.cpp)
 TARGET_LINK_LIBRARIES(qgis_arcgisrestutilstest arcgisfeatureserverprovider_a)
 
+ADD_QGIS_TEST(gdalprovidertest testqgsgdalprovider.cpp)
+
 IF(NOT MSVC)
   SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread")
 ENDIF(NOT MSVC)
+
+ADD_QGIS_TEST(ogrprovidertest testqgsogrprovider.cpp)
+TARGET_LINK_LIBRARIES(qgis_ogrprovidertest ogrprovider_a)
 
 ADD_QGIS_TEST(wmscapabilitiestest
               testqgswmscapabilities.cpp)

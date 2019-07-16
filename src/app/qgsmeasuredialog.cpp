@@ -25,7 +25,6 @@
 #include "qgscoordinatereferencesystem.h"
 #include "qgsunittypes.h"
 #include "qgssettings.h"
-#include "qgsgui.h"
 
 #include <QCloseEvent>
 #include <QLocale>
@@ -39,7 +38,6 @@ QgsMeasureDialog::QgsMeasureDialog( QgsMeasureTool *tool, Qt::WindowFlags f )
   , mCanvas( tool->canvas() )
 {
   setupUi( this );
-  QgsGui::instance()->enableAutoGeometryRestore( this );
   connect( buttonBox, &QDialogButtonBox::helpRequested, this, &QgsMeasureDialog::showHelp );
 
   QPushButton *nb = new QPushButton( tr( "&New" ) );
@@ -267,7 +265,8 @@ void QgsMeasureDialog::removeLastPoint()
     if ( numPoints > 1 )
     {
       QVector<QgsPointXY> tmpPoints = mTool->points();
-      tmpPoints.append( mLastMousePoint );
+      if ( !mTool->done() )
+        tmpPoints.append( mLastMousePoint );
       double area = mDa.measurePolygon( tmpPoints );
       editTotal->setText( formatArea( area ) );
     }
@@ -312,6 +311,7 @@ void QgsMeasureDialog::closeEvent( QCloseEvent *e )
 void QgsMeasureDialog::restorePosition()
 {
   QgsSettings settings;
+  restoreGeometry( settings.value( QStringLiteral( "Windows/Measure/geometry" ) ).toByteArray() );
   int wh;
   if ( mMeasureArea )
     wh = settings.value( QStringLiteral( "Windows/Measure/hNoTable" ), 70 ).toInt();
@@ -324,6 +324,7 @@ void QgsMeasureDialog::restorePosition()
 void QgsMeasureDialog::saveWindowLocation()
 {
   QgsSettings settings;
+  settings.setValue( QStringLiteral( "Windows/Measure/geometry" ), saveGeometry() );
   const QString &key = mMeasureArea ? "/Windows/Measure/hNoTable" : "/Windows/Measure/h";
   settings.setValue( key, height() );
 }
@@ -555,7 +556,8 @@ void QgsMeasureDialog::updateUi()
     {
       area = mDa.measurePolygon( mTool->points() );
     }
-    mTable->hide(); // Hide the table, only show summary.
+    mTable->hide(); // Hide the table, only show summary
+    mSpacer->changeSize( 40, 5, QSizePolicy::Fixed, QSizePolicy::Expanding );
     editTotal->setText( formatArea( area ) );
   }
   else
@@ -592,6 +594,7 @@ void QgsMeasureDialog::updateUi()
 
     mTotal = mDa.measureLine( mTool->points() );
     mTable->show(); // Show the table with items
+    mSpacer->changeSize( 40, 5, QSizePolicy::Fixed, QSizePolicy::Maximum );
     editTotal->setText( formatDistance( mTotal, mConvertToDisplayUnits ) );
   }
 }

@@ -27,7 +27,6 @@ from qgis.PyQt.QtGui import QIcon
 
 from qgis.core import (QgsProcessing,
                        QgsProcessingException,
-                       QgsProcessingParameterDefinition,
                        QgsProcessingParameterRasterLayer,
                        QgsProcessingParameterBand,
                        QgsProcessingParameterString,
@@ -46,7 +45,6 @@ class polygonize(GdalAlgorithm):
     BAND = 'BAND'
     FIELD = 'FIELD'
     EIGHT_CONNECTEDNESS = 'EIGHT_CONNECTEDNESS'
-    EXTRA = 'EXTRA'
     OUTPUT = 'OUTPUT'
 
     def __init__(self):
@@ -64,13 +62,6 @@ class polygonize(GdalAlgorithm):
         self.addParameter(QgsProcessingParameterBoolean(self.EIGHT_CONNECTEDNESS,
                                                         self.tr('Use 8-connectedness'),
                                                         defaultValue=False))
-
-        extra_param = QgsProcessingParameterString(self.EXTRA,
-                                                   self.tr('Additional command-line parameters'),
-                                                   defaultValue=None,
-                                                   optional=True)
-        extra_param.setFlags(extra_param.flags() | QgsProcessingParameterDefinition.FlagAdvanced)
-        self.addParameter(extra_param)
 
         self.addParameter(QgsProcessingParameterVectorDestination(self.OUTPUT,
                                                                   self.tr('Vectorized'),
@@ -115,10 +106,6 @@ class polygonize(GdalAlgorithm):
 
         if outFormat:
             arguments.append('-f {}'.format(outFormat))
-
-        if self.EXTRA in parameters and parameters[self.EXTRA] not in (None, ''):
-            extra = self.parameterAsString(parameters, self.EXTRA, context)
-            arguments.append(extra)
 
         layerName = GdalUtils.ogrOutputLayerName(output)
         if layerName:

@@ -16,7 +16,6 @@
 #define QGSMDALDATAITEMS_H
 
 #include "qgsdataitem.h"
-#include "qgsdataitemprovider.h"
 
 #include <QString>
 
@@ -27,17 +26,6 @@ class QgsMdalLayerItem : public QgsLayerItem
     //! Ctor
     QgsMdalLayerItem( QgsDataItem *parent, const QString &name, const QString &path, const QString &uri );
     QString layerName() const override;
-};
-
-//! Provider for MDAL data items
-class QgsMdalDataItemProvider : public QgsDataItemProvider
-{
-  public:
-    QString name() override;
-
-    int capabilities() const override;
-
-    QgsDataItem *createDataItem( const QString &pathIn, QgsDataItem *parentItem ) override;
 };
 
 #endif // QGSMDALDATAITEMS_H

@@ -38,6 +38,8 @@ layers from the WCS server to the map canvas.
 Constructor
 %End
 
+    ~QgsOWSSourceSelect();
+
   public slots:
 
     virtual void refresh();

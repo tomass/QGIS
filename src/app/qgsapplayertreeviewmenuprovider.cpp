@@ -42,6 +42,7 @@
 #include "qgsxmlutils.h"
 
 
+
 QgsAppLayerTreeViewMenuProvider::QgsAppLayerTreeViewMenuProvider( QgsLayerTreeView *view, QgsMapCanvas *canvas )
   : mView( view )
   , mCanvas( canvas )
@@ -712,6 +713,8 @@ void QgsAppLayerTreeViewMenuProvider::editVectorSymbol()
     singleRenderer->setSymbol( symbol.release() );
     layer->triggerRepaint();
     mView->refreshLayerSymbology( layer->id() );
+    layer->emitStyleChanged();
+    QgsProject::instance()->setDirty( true );
   }
 }
 
@@ -758,6 +761,7 @@ void QgsAppLayerTreeViewMenuProvider::setVectorSymbolColor( const QColor &color 
   layer->triggerRepaint();
   layer->emitStyleChanged();
   mView->refreshLayerSymbology( layer->id() );
+  QgsProject::instance()->setDirty( true );
 }
 
 void QgsAppLayerTreeViewMenuProvider::editSymbolLegendNodeSymbol()
@@ -792,6 +796,7 @@ void QgsAppLayerTreeViewMenuProvider::editSymbolLegendNodeSymbol()
     {
       vlayer->emitStyleChanged();
     }
+    QgsProject::instance()->setDirty( true );
   }
 }
 
@@ -819,6 +824,7 @@ void QgsAppLayerTreeViewMenuProvider::setSymbolLegendNodeColor( const QColor &co
   {
     layer->emitStyleChanged();
   }
+  QgsProject::instance()->setDirty( true );
 }
 
 bool QgsAppLayerTreeViewMenuProvider::removeActionEnabled()

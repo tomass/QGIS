@@ -84,6 +84,7 @@ class GUI_EXPORT QgsSourceSelectProvider
      * Caller takes responsibility of deleting created.
      */
     virtual QgsAbstractDataSourceWidget *createDataSourceWidget( QWidget *parent = nullptr, Qt::WindowFlags fl = Qt::Widget, QgsProviderRegistry::WidgetMode widgetMode = QgsProviderRegistry::WidgetMode::Embedded ) const = 0 SIP_FACTORY;
+
 };
 
 

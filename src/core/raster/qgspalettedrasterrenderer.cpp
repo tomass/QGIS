@@ -19,7 +19,6 @@
 #include "qgsrastertransparency.h"
 #include "qgsrasterviewport.h"
 #include "qgssymbollayerutils.h"
-#include "qgsstyleentityvisitor.h"
 
 #include <QColor>
 #include <QDomDocument>
@@ -298,18 +297,6 @@ void QgsPalettedRasterRenderer::toSld( QDomDocument &doc, QDomElement &element, 
       colorMapEntryElem.setAttribute( QStringLiteral( "opacity" ), QString::number( classDataIt->color.alphaF() ) );
     }
   }
-}
-
-bool QgsPalettedRasterRenderer::accept( QgsStyleEntityVisitorInterface *visitor ) const
-{
-  if ( mSourceColorRamp )
-  {
-    QgsStyleColorRampEntity entity( mSourceColorRamp.get() );
-    if ( !visitor->visit( QgsStyleEntityVisitorInterface::StyleLeaf( &entity ) ) )
-      return false;
-  }
-
-  return true;
 }
 
 void QgsPalettedRasterRenderer::legendSymbologyItems( QList< QPair< QString, QColor > > &symbolItems ) const

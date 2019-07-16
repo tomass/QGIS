@@ -25,8 +25,8 @@ import os
 import math
 from uuid import uuid4
 
-import gdal
 import sqlite3
+from osgeo import gdal
 from qgis.PyQt.QtCore import QSize, Qt, QByteArray, QBuffer
 from qgis.PyQt.QtGui import QColor, QImage, QPainter
 from qgis.core import (QgsProcessingException,
@@ -35,7 +35,6 @@ from qgis.core import (QgsProcessingException,
                        QgsProcessingParameterBoolean,
                        QgsProcessingParameterString,
                        QgsProcessingParameterExtent,
-                       QgsProcessingParameterColor,
                        QgsProcessingOutputFile,
                        QgsProcessingParameterFileDestination,
                        QgsProcessingParameterFolderDestination,
@@ -75,6 +74,7 @@ def num2deg(xtile, ytile, zoom):
 
 
 class Tile:
+
     def __init__(self, x, y, z):
         self.x = x
         self.y = y
@@ -87,6 +87,7 @@ class Tile:
 
 
 class MetaTile:
+
     def __init__(self):
         # list of tuple(row index, column index, Tile)
         self.tiles = []
@@ -130,10 +131,8 @@ class TilesXYZAlgorithmBase(QgisAlgorithm):
     ZOOM_MIN = 'ZOOM_MIN'
     ZOOM_MAX = 'ZOOM_MAX'
     DPI = 'DPI'
-    BACKGROUND_COLOR = 'BACKGROUND_COLOR'
     TILE_FORMAT = 'TILE_FORMAT'
     QUALITY = 'QUALITY'
-    METATILESIZE = 'METATILESIZE'
 
     def initAlgorithm(self, config=None):
         self.addParameter(QgsProcessingParameterExtent(self.EXTENT, self.tr('Extent')))
@@ -152,10 +151,6 @@ class TilesXYZAlgorithmBase(QgisAlgorithm):
                                                        minValue=48,
                                                        maxValue=600,
                                                        defaultValue=96))
-        self.addParameter(QgsProcessingParameterColor(self.BACKGROUND_COLOR,
-                                                      self.tr('Background color'),
-                                                      defaultValue=QColor(Qt.transparent),
-                                                      optional=True))
         self.formats = ['PNG', 'JPG']
         self.addParameter(QgsProcessingParameterEnum(self.TILE_FORMAT,
                                                      self.tr('Tile format'),
@@ -166,11 +161,6 @@ class TilesXYZAlgorithmBase(QgisAlgorithm):
                                                        minValue=1,
                                                        maxValue=100,
                                                        defaultValue=75))
-        self.addParameter(QgsProcessingParameterNumber(self.METATILESIZE,
-                                                       self.tr('Metatile size'),
-                                                       minValue=1,
-                                                       maxValue=20,
-                                                       defaultValue=4))
 
     def prepareAlgorithm(self, parameters, context, feedback):
         project = context.project()
@@ -185,10 +175,8 @@ class TilesXYZAlgorithmBase(QgisAlgorithm):
         self.min_zoom = self.parameterAsInt(parameters, self.ZOOM_MIN, context)
         self.max_zoom = self.parameterAsInt(parameters, self.ZOOM_MAX, context)
         dpi = self.parameterAsInt(parameters, self.DPI, context)
-        color = self.parameterAsColor(parameters, self.BACKGROUND_COLOR, context)
         self.tile_format = self.formats[self.parameterAsEnum(parameters, self.TILE_FORMAT, context)]
         quality = self.parameterAsInt(parameters, self.QUALITY, context)
-        self.metatilesize = self.parameterAsInt(parameters, self.METATILESIZE, context)
         try:
             tile_width = self.parameterAsInt(parameters, self.TILE_WIDTH, context)
             tile_height = self.parameterAsInt(parameters, self.TILE_HEIGHT, context)
@@ -209,7 +197,7 @@ class TilesXYZAlgorithmBase(QgisAlgorithm):
         settings.setLayers(self.layers)
         settings.setOutputDpi(dpi)
         if self.tile_format == 'PNG':
-            settings.setBackgroundColor(color)
+            settings.setBackgroundColor(QColor(Qt.transparent))
 
         # disable partial labels (they would be cut at the edge of tiles)
         labeling_engine_settings = settings.labelingEngineSettings()
@@ -223,7 +211,7 @@ class TilesXYZAlgorithmBase(QgisAlgorithm):
         metatiles_by_zoom = {}
         metatiles_count = 0
         for zoom in range(self.min_zoom, self.max_zoom + 1):
-            metatiles = get_metatiles(self.wgs_extent, zoom, self.metatilesize)
+            metatiles = get_metatiles(self.wgs_extent, zoom, 4)
             metatiles_by_zoom[zoom] = metatiles
             metatiles_count += len(metatiles)
 
@@ -254,7 +242,7 @@ class TilesXYZAlgorithmBase(QgisAlgorithm):
                 settings.setOutputSize(size)
 
                 image = QImage(size, QImage.Format_ARGB32_Premultiplied)
-                image.fill(color)
+                image.fill(Qt.transparent)
                 dpm = settings.outputDpi() / 25.4 * 1000
                 image.setDotsPerMeterX(dpm)
                 image.setDotsPerMeterY(dpm)
@@ -290,6 +278,7 @@ class TilesXYZAlgorithmBase(QgisAlgorithm):
 # MBTiles
 ########################################################################
 class MBTilesWriter:
+
     def __init__(self, filename):
         base_dir = os.path.dirname(filename)
         os.makedirs(base_dir, exist_ok=True)
@@ -451,6 +440,7 @@ LEAFLET_TEMPLATE = '''
 
 
 class DirectoryWriter:
+
     def __init__(self, folder, is_tms):
         self.folder = folder
         self.is_tms = is_tms

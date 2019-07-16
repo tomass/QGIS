@@ -42,6 +42,7 @@ class QgsRasterLayerSaveAsDialog: QDialog
 %Docstring
 Constructor for QgsRasterLayerSaveAsDialog
 %End
+    ~QgsRasterLayerSaveAsDialog();
 
     Mode mode() const;
     int nColumns() const;

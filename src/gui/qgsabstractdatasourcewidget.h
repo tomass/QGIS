@@ -22,14 +22,12 @@
 #include "qgis_sip.h"
 #include "qgis_gui.h"
 
-#include "qgsproviderguimetadata.h"
 #include "qgsproviderregistry.h"
 #include "qgsguiutils.h"
 #include <QDialog>
 #include <QDialogButtonBox>
 
 class QgsMapCanvas;
-
 
 /**
  * \ingroup gui
@@ -66,6 +64,7 @@ class GUI_EXPORT QgsAbstractDataSourceWidget : public QDialog
      * being added.
      */
     virtual void addButtonClicked() { }
+
 
   signals:
 

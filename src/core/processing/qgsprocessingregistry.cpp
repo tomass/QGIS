@@ -51,7 +51,6 @@ QgsProcessingRegistry::QgsProcessingRegistry( QObject *parent SIP_TRANSFERTHIS )
   addParameterType( new QgsProcessingParameterTypeFeatureSink() );
   addParameterType( new QgsProcessingParameterTypeLayout() );
   addParameterType( new QgsProcessingParameterTypeLayoutItem() );
-  addParameterType( new QgsProcessingParameterTypeColor() );
 }
 
 QgsProcessingRegistry::~QgsProcessingRegistry()

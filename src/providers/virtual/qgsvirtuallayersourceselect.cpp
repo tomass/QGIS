@@ -399,3 +399,9 @@ void QgsVirtualLayerSourceSelect::addButtonClicked()
     accept();
   }
 }
+
+QGISEXTERN QgsVirtualLayerSourceSelect *selectWidget( QWidget *parent, Qt::WindowFlags fl, QgsProviderRegistry::WidgetMode widgetMode )
+{
+  return new QgsVirtualLayerSourceSelect( parent, fl, widgetMode );
+}
+

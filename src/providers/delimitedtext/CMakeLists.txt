@@ -15,7 +15,6 @@ SET (DTEXT_MOC_HDRS
 
 IF (WITH_GUI)
   SET(DTEXT_SRCS ${DTEXT_SRCS}
-    qgsdelimitedtextprovidergui.cpp
     qgsdelimitedtextsourceselect.cpp
   )
   SET(DTEXT_MOC_HDRS ${DTEXT_MOC_HDRS}

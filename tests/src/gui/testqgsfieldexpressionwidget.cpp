@@ -306,10 +306,6 @@ void TestQgsFieldExpressionWidget::testFilters()
   QCOMPARE( widget->mCombo->count(), 1 );
   QCOMPARE( widget->mCombo->itemText( 0 ), QStringLiteral( "timefld" ) );
 
-  widget->setFilters( QgsFieldProxyModel::DateTime );
-  QCOMPARE( widget->mCombo->count(), 1 );
-  QCOMPARE( widget->mCombo->itemText( 0 ), QStringLiteral( "datetimefld" ) );
-
   QgsProject::instance()->removeMapLayer( layer );
 }
 

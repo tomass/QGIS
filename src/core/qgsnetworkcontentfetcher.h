@@ -51,19 +51,16 @@ class CORE_EXPORT QgsNetworkContentFetcher : public QObject
      * Fetches content from a remote URL and handles redirects. The finished()
      * signal will be emitted when content has been fetched.
      * \param url URL to fetch
-     * \param authcfg optional authentication configuration
      */
-    void fetchContent( const QUrl &url, const QString &authcfg = QString() );
+    void fetchContent( const QUrl &url );
 
     /**
      * Fetches content using a network \a request and handles redirects. The finished()
      * signal will be emitted when content has been fetched.
      *
-     * Optionally, authentication configuration can be set via the \a authcfg argument.
-     *
      * \since QGIS 3.2
      */
-    void fetchContent( const QNetworkRequest &request, const QString &authcfg = QString() );
+    void fetchContent( const QNetworkRequest &request );
 
     /**
      * Returns a reference to the network reply
@@ -98,7 +95,6 @@ class CORE_EXPORT QgsNetworkContentFetcher : public QObject
 
   private:
 
-    QString mAuthCfg;
     QNetworkReply *mReply = nullptr;
 
     bool mContentLoaded = false;

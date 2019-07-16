@@ -59,7 +59,7 @@ QString QgsQlrDataItemProvider::name()
   return QStringLiteral( "QLR" );
 }
 
-int QgsQlrDataItemProvider::capabilities() const
+int QgsQlrDataItemProvider::capabilities()
 {
   return QgsDataProvider::File;
 }
@@ -95,7 +95,7 @@ QString QgsQptDataItemProvider::name()
   return QStringLiteral( "QPT" );
 }
 
-int QgsQptDataItemProvider::capabilities() const
+int QgsQptDataItemProvider::capabilities()
 {
   return QgsDataProvider::File;
 }
@@ -237,7 +237,7 @@ QString QgsPyDataItemProvider::name()
   return QStringLiteral( "py" );
 }
 
-int QgsPyDataItemProvider::capabilities() const
+int QgsPyDataItemProvider::capabilities()
 {
   return QgsDataProvider::File;
 }
@@ -361,7 +361,7 @@ QString QgsStyleXmlDataItemProvider::name()
   return QStringLiteral( "style_xml" );
 }
 
-int QgsStyleXmlDataItemProvider::capabilities() const
+int QgsStyleXmlDataItemProvider::capabilities()
 {
   return QgsDataProvider::File;
 }
@@ -513,7 +513,7 @@ QString QgsProjectDataItemProvider::name()
   return QStringLiteral( "project_item" );
 }
 
-int QgsProjectDataItemProvider::capabilities() const
+int QgsProjectDataItemProvider::capabilities()
 {
   return QgsDataProvider::File;
 }

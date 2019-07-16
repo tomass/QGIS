@@ -17,7 +17,6 @@
 #include "qgsgpsdetector.h"
 #include "qgssettings.h"
 #include "qgsvectorlayer.h"
-#include "qgsgui.h"
 
 //qt includes
 #include <QFileDialog>
@@ -36,7 +35,6 @@ QgsGpsPluginGui::QgsGpsPluginGui( const BabelMap &importers,
   , mDevices( devices )
 {
   setupUi( this );
-  QgsGui::instance()->enableAutoGeometryRestore( this );
   connect( pbnIMPInput, &QPushButton::clicked, this, &QgsGpsPluginGui::pbnIMPInput_clicked );
   connect( pbnIMPOutput, &QPushButton::clicked, this, &QgsGpsPluginGui::pbnIMPOutput_clicked );
   connect( pbnCONVInput, &QPushButton::clicked, this, &QgsGpsPluginGui::pbnCONVInput_clicked );
@@ -92,6 +90,7 @@ QgsGpsPluginGui::QgsGpsPluginGui( const BabelMap &importers,
 QgsGpsPluginGui::~QgsGpsPluginGui()
 {
   QgsSettings settings;
+  settings.setValue( QStringLiteral( "Plugin-GPS/geometry" ), saveGeometry() );
   settings.setValue( QStringLiteral( "Plugin-GPS/lastTab" ), tabWidget->currentIndex() );
 }
 
@@ -445,6 +444,7 @@ void QgsGpsPluginGui::devicesUpdated()
 void QgsGpsPluginGui::restoreState()
 {
   QgsSettings settings;
+  restoreGeometry( settings.value( QStringLiteral( "Plugin-GPS/geometry" ) ).toByteArray() );
   tabWidget->setCurrentIndex( settings.value( QStringLiteral( "Plugin-GPS/lastTab" ), 4 ).toInt() );
 }
 

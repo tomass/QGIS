@@ -31,11 +31,11 @@ Constructor for QgsBrowserTreeView
 
     virtual void setModel( QAbstractItemModel *model );
 
-    void setBrowserModel( QgsBrowserGuiModel *model );
+    void setBrowserModel( QgsBrowserModel *model );
 %Docstring
 Sets the browser model
 %End
-    QgsBrowserGuiModel *browserModel();
+    QgsBrowserModel *browserModel();
 %Docstring
 Returns the browser model
 %End

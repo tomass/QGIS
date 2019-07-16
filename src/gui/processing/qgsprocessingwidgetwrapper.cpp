@@ -315,13 +315,6 @@ QgsProcessingModelerParameterWidget *QgsProcessingParameterWidgetFactoryInterfac
   return widget.release();
 }
 
-QgsProcessingAbstractParameterDefinitionWidget *QgsProcessingParameterWidgetFactoryInterface::createParameterDefinitionWidget( QgsProcessingContext &,
-    const QgsProcessingParameterWidgetContext &, const QgsProcessingParameterDefinition *,
-    const QgsProcessingAlgorithm * )
-{
-  return nullptr;
-}
-
 QString QgsProcessingParameterWidgetFactoryInterface::modelerExpressionFormatString() const
 {
   return QString();

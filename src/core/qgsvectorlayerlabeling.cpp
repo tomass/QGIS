@@ -21,7 +21,6 @@
 #include "qgssymbollayer.h"
 #include "qgsmarkersymbollayer.h"
 #include "qgis.h"
-#include "qgsstyleentityvisitor.h"
 
 
 QgsAbstractVectorLayerLabeling *QgsAbstractVectorLayerLabeling::create( const QDomElement &element, const QgsReadWriteContext &context )
@@ -39,11 +38,6 @@ QgsAbstractVectorLayerLabeling *QgsAbstractVectorLayerLabeling::create( const QD
   {
     return nullptr;
   }
-}
-
-bool QgsAbstractVectorLayerLabeling::accept( QgsStyleEntityVisitorInterface * ) const
-{
-  return true;
 }
 
 QgsVectorLayerLabelProvider *QgsVectorLayerSimpleLabeling::provider( QgsVectorLayer *layer ) const
@@ -79,17 +73,6 @@ QgsPalLayerSettings QgsVectorLayerSimpleLabeling::settings( const QString &provi
 {
   Q_UNUSED( providerId )
   return *mSettings;
-}
-
-bool QgsVectorLayerSimpleLabeling::accept( QgsStyleEntityVisitorInterface *visitor ) const
-{
-  if ( mSettings )
-  {
-    QgsStyleLabelSettingsEntity entity( *mSettings );
-    if ( !visitor->visit( &entity ) )
-      return false;
-  }
-  return true;
 }
 
 bool QgsVectorLayerSimpleLabeling::requiresAdvancedEffects() const
@@ -182,16 +165,6 @@ std::unique_ptr<QgsMarkerSymbolLayer> backgroundToMarkerLayer( const QgsTextBack
       layer.reset( svg );
       break;
     }
-    case QgsTextBackgroundSettings::ShapeMarkerSymbol:
-    {
-      // just grab the first layer and hope for the best
-      if ( settings.markerSymbol() && settings.markerSymbol()->symbolLayerCount() > 0 )
-      {
-        layer.reset( static_cast< QgsMarkerSymbolLayer * >( settings.markerSymbol()->symbolLayer( 0 )->clone() ) );
-        break;
-      }
-      FALLTHROUGH // not set, just go with the default
-    }
     case QgsTextBackgroundSettings::ShapeCircle:
     case QgsTextBackgroundSettings::ShapeEllipse:
     case QgsTextBackgroundSettings::ShapeRectangle:
@@ -211,7 +184,6 @@ std::unique_ptr<QgsMarkerSymbolLayer> backgroundToMarkerLayer( const QgsTextBack
           shape = QgsSimpleMarkerSymbolLayerBase::Square;
           break;
         case QgsTextBackgroundSettings::ShapeSVG:
-        case QgsTextBackgroundSettings::ShapeMarkerSymbol:
           break;
       }
 

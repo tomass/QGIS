@@ -54,7 +54,6 @@ class CORE_EXPORT QgsLayoutItemPolygon: public QgsLayoutNodesItem
     int type() const override;
     QIcon icon() const override;
     QString displayName() const override;
-    bool accept( QgsStyleEntityVisitorInterface *visitor ) const override;
 
     /**
      * Returns the fill symbol used to draw the shape.

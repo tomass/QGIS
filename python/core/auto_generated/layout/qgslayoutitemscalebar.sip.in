@@ -509,9 +509,6 @@ Adjusts the scale bar box size and updates the item.
 
     virtual void finalizeRestoreFromXml();
 
-    virtual bool accept( QgsStyleEntityVisitorInterface *visitor ) const;
-
-
   protected:
 
     virtual void draw( QgsLayoutItemRenderContext &context );

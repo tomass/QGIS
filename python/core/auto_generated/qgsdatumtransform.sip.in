@@ -89,6 +89,10 @@ and ``destinationTransformId`` transforms.
       QString remarks;
 
       QString areaOfUse;
+
+      QString authority;
+
+      QString code;
     };
 
     struct TransformDetails
@@ -97,6 +101,10 @@ and ``destinationTransformId`` transforms.
       QString name;
       double accuracy;
 
+      QString authority;
+
+      QString code;
+
       QString scope;
 
       QString remarks;
@@ -104,6 +112,8 @@ and ``destinationTransformId`` transforms.
       bool isAvailable;
 
       QString areaOfUse;
+
+      QgsRectangle bounds;
 
       QList< QgsDatumTransform::GridDetails > grids;
 

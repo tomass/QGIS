@@ -113,6 +113,7 @@ class QgsSvgSelectorDialog : QDialog
 %Docstring
 Constructor for QgsSvgSelectorDialog.
 %End
+    ~QgsSvgSelectorDialog();
 
     QgsSvgSelectorWidget *svgSelector();
 %Docstring

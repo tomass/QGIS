@@ -789,7 +789,7 @@ QSizeF QgsLegendRenderer::drawGroupTitleInternal( QgsLayerTreeGroup *nodeGroup, 
       y += mSettings.lineSpacing();
     }
   }
-  size.rheight() = y - top + mSettings.style( nodeLegendStyle( nodeGroup ) ).margin( QgsLegendStyle::Bottom );
+  size.rheight() = y - top;
   return size;
 }
 

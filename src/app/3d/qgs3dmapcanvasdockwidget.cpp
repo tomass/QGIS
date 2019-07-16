@@ -30,7 +30,6 @@
 #include "qgsmapcanvas.h"
 #include "qgsmessagebar.h"
 #include "qgsapplication.h"
-#include "qgssettings.h"
 
 #include "qgs3danimationsettings.h"
 #include "qgs3danimationwidget.h"
@@ -43,7 +42,6 @@
 Qgs3DMapCanvasDockWidget::Qgs3DMapCanvasDockWidget( QWidget *parent )
   : QgsDockWidget( parent )
 {
-  QgsSettings setting;
   setAttribute( Qt::WA_DeleteOnClose );  // removes the dock widget from main window when
 
   QWidget *contentsWidget = new QWidget( this );
@@ -54,16 +52,6 @@ Qgs3DMapCanvasDockWidget::Qgs3DMapCanvasDockWidget( QWidget *parent )
 
   toolBar->addAction( QgsApplication::getThemeIcon( QStringLiteral( "mActionZoomFullExtent.svg" ) ),
                       tr( "Zoom Full" ), this, &Qgs3DMapCanvasDockWidget::resetView );
-
-  QAction *toggleOnScreenNavigation = toolBar->addAction(
-                                        QgsApplication::getThemeIcon( QStringLiteral( "mAction3DNavigation.svg" ) ),
-                                        tr( "Toggle On-Screen Navigation" ) );
-
-  toggleOnScreenNavigation->setCheckable( true );
-  toggleOnScreenNavigation->setChecked(
-    setting.value( QStringLiteral( "/3D/navigationWidget/visibility" ), true, QgsSettings::Gui ).toBool()
-  );
-  QObject::connect( toggleOnScreenNavigation, &QAction::toggled, this, &Qgs3DMapCanvasDockWidget::toggleNavigationWidget );
 
   toolBar->addSeparator();
 
@@ -157,11 +145,6 @@ void Qgs3DMapCanvasDockWidget::identify()
     return;
 
   mCanvas->setMapTool( action->isChecked() ? mMapToolIdentify : nullptr );
-}
-
-void Qgs3DMapCanvasDockWidget::toggleNavigationWidget( bool visibility )
-{
-  mCanvas->setOnScreenNavigationVisibility( visibility );
 }
 
 void Qgs3DMapCanvasDockWidget::setMapSettings( Qgs3DMapSettings *map )

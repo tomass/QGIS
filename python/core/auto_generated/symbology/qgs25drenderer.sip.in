@@ -41,8 +41,6 @@ Create a new 2.5D renderer from XML
 
     virtual QgsSymbolList symbols( QgsRenderContext &context ) const;
 
-    virtual bool accept( QgsStyleEntityVisitorInterface *visitor ) const;
-
 
     QColor roofColor() const;
 %Docstring

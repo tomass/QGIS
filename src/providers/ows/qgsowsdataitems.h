@@ -18,7 +18,6 @@
 #include "qgsdataitem.h"
 #include "qgsdatasourceuri.h"
 #include "qgswkbtypes.h"
-#include "qgsdataitemprovider.h"
 
 class QgsOWSConnectionItem : public QgsDataCollectionItem
 {
@@ -28,6 +27,16 @@ class QgsOWSConnectionItem : public QgsDataCollectionItem
 
     QVector<QgsDataItem *> createChildren() override;
     bool equal( const QgsDataItem *other ) override;
+
+#ifdef HAVE_GUI
+    QList<QAction *> actions( QWidget *parent ) override;
+#endif
+
+  public slots:
+#ifdef HAVE_GUI
+    void editConnection();
+    void deleteConnection();
+#endif
 
   private:
     void replacePath( QgsDataItem *item, QString before, QString after );
@@ -43,17 +52,17 @@ class QgsOWSRootItem : public QgsDataCollectionItem
 
     QVariant sortKey() const override { return 11; }
 
-};
+#ifdef HAVE_GUI
+    QList<QAction *> actions( QWidget *parent ) override;
+    QWidget *paramWidget() override;
+#endif
 
-//! Provider for OWS data item
-class QgsOwsDataItemProvider : public QgsDataItemProvider
-{
-  public:
-    QString name() override;
+  public slots:
+#ifdef HAVE_GUI
+    void onConnectionsChanged();
 
-    int capabilities() const override;
-
-    QgsDataItem *createDataItem( const QString &pathIn, QgsDataItem *parentItem ) override;
+    void newConnection();
+#endif
 };
 
 #endif // QGSOWSDATAITEMS_H

@@ -42,7 +42,6 @@ QgsProcessingGuiRegistry::QgsProcessingGuiRegistry()
   addParameterWidgetFactory( new QgsProcessingLayoutWidgetWrapper() );
   addParameterWidgetFactory( new QgsProcessingLayoutItemWidgetWrapper() );
   addParameterWidgetFactory( new QgsProcessingPointWidgetWrapper() );
-  addParameterWidgetFactory( new QgsProcessingColorWidgetWrapper() );
 }
 
 QgsProcessingGuiRegistry::~QgsProcessingGuiRegistry()
@@ -128,17 +127,5 @@ QgsProcessingModelerParameterWidget *QgsProcessingGuiRegistry::createModelerPara
     return nullptr;
 
   return mParameterWidgetFactories.value( parameterType )->createModelerWidgetWrapper( model, childId, parameter, context );
-}
-
-QgsProcessingAbstractParameterDefinitionWidget *QgsProcessingGuiRegistry::createParameterDefinitionWidget( const QString &type,
-    QgsProcessingContext &context,
-    const QgsProcessingParameterWidgetContext &widgetContext,
-    const QgsProcessingParameterDefinition *definition,
-    const QgsProcessingAlgorithm *algorithm )
-{
-  if ( !mParameterWidgetFactories.contains( type ) )
-    return nullptr;
-
-  return mParameterWidgetFactories.value( type )->createParameterDefinitionWidget( context, widgetContext, definition, algorithm );
 }
 

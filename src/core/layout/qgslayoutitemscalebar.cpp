@@ -32,7 +32,6 @@
 #include "qgsfontutils.h"
 #include "qgsunittypes.h"
 #include "qgssettings.h"
-#include "qgsstyleentityvisitor.h"
 
 #include <QDomDocument>
 #include <QDomElement>
@@ -852,13 +851,4 @@ void QgsLayoutItemScaleBar::finalizeRestoreFromXml()
   }
 
   updateScale();
-}
-
-bool QgsLayoutItemScaleBar::accept( QgsStyleEntityVisitorInterface *visitor ) const
-{
-  QgsStyleTextFormatEntity entity( mSettings.textFormat() );
-  if ( !visitor->visit( QgsStyleEntityVisitorInterface::StyleLeaf( &entity, uuid(), displayName() ) ) )
-    return false;
-
-  return true;
 }
