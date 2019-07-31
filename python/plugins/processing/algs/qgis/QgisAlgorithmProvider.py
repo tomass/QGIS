@@ -48,7 +48,6 @@ from .Aggregate import Aggregate
 from .Aspect import Aspect
 from .BasicStatistics import BasicStatisticsForField
 from .CheckValidity import CheckValidity
-from .Climb import Climb
 from .ConcaveHull import ConcaveHull
 from .CreateAttributeIndex import CreateAttributeIndex
 from .CreateConstantRaster import CreateConstantRaster
@@ -159,7 +158,6 @@ class QgisAlgorithmProvider(QgsProcessingProvider):
                 Aspect(),
                 BasicStatisticsForField(),
                 CheckValidity(),
-                Climb(),
                 ConcaveHull(),
                 CreateAttributeIndex(),
                 CreateConstantRaster(),

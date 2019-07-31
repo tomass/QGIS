@@ -85,7 +85,6 @@ class QgsLayoutLegendWidget: public QgsLayoutItemBaseWidget, private Ui::QgsLayo
     void resetLayerNodeToDefaults();
     void mUpdateAllPushButton_clicked();
     void mAddGroupToolButton_clicked();
-    void mLayerExpressionButton_clicked();
 
     void mFilterLegendByAtlasCheckBox_toggled( bool checked );
 
@@ -113,9 +112,6 @@ class QgsLayoutLegendWidget: public QgsLayoutItemBaseWidget, private Ui::QgsLayo
     void subgroupAlignmentChanged();
     void itemAlignmentChanged();
     void arrangementChanged();
-
-    void spaceBelowSubGroupHeadingChanged( double space );
-    void spaceBelowGroupHeadingChanged( double space );
 
   private:
     QgsLayoutLegendWidget() = delete;

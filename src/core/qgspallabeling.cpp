@@ -19,7 +19,6 @@
 #include "qgstextlabelfeature.h"
 #include "qgsunittypes.h"
 #include "qgsexception.h"
-#include "qgsapplication.h"
 
 #include <list>
 
@@ -38,7 +37,6 @@
 #include <QFontMetrics>
 #include <QTime>
 #include <QPainter>
-#include <QDesktopWidget>
 
 #include "diagram/qgsdiagram.h"
 #include "qgsdiagramrenderer.h"
@@ -63,8 +61,6 @@
 #include "qgscurvepolygon.h"
 #include "qgsmessagelog.h"
 #include "qgsgeometrycollection.h"
-#include "callouts/qgscallout.h"
-#include "callouts/qgscalloutsregistry.h"
 #include <QMessageBox>
 
 using namespace pal;
@@ -202,7 +198,6 @@ void QgsPalLayerSettings::initPropertyDefinitions()
     { QgsPalLayerSettings::CurvedCharAngleInOut, QgsPropertyDefinition( "CurvedCharAngleInOut", QgsPropertyDefinition::DataTypeString, QObject::tr( "Curved character angles" ), QObject::tr( "double coord [<b>in,out</b> as 20.0-60.0,20.0-95.0]" ), origin ) },
     { QgsPalLayerSettings::RepeatDistance, QgsPropertyDefinition( "RepeatDistance", QObject::tr( "Repeat distance" ), QgsPropertyDefinition::DoublePositive, origin ) },
     { QgsPalLayerSettings::RepeatDistanceUnit, QgsPropertyDefinition( "RepeatDistanceUnit", QObject::tr( "Repeat distance unit" ), QgsPropertyDefinition::RenderUnits, origin ) },
-    { QgsPalLayerSettings::OverrunDistance, QgsPropertyDefinition( "OverrunDistance", QObject::tr( "Overrun distance" ), QgsPropertyDefinition::DoublePositive, origin ) },
     { QgsPalLayerSettings::Priority, QgsPropertyDefinition( "Priority", QgsPropertyDefinition::DataTypeString, QObject::tr( "Label priority" ), QObject::tr( "double [0.0-10.0]" ), origin ) },
     { QgsPalLayerSettings::IsObstacle, QgsPropertyDefinition( "IsObstacle", QObject::tr( "Feature is a label obstacle" ), QgsPropertyDefinition::Boolean, origin ) },
     { QgsPalLayerSettings::ObstacleFactor, QgsPropertyDefinition( "ObstacleFactor", QgsPropertyDefinition::DataTypeNumeric, QObject::tr( "Obstacle factor" ), QObject::tr( "double [0.0-10.0]" ), origin ) },
@@ -240,12 +235,9 @@ void QgsPalLayerSettings::initPropertyDefinitions()
     { QgsPalLayerSettings::ZIndex, QgsPropertyDefinition( "ZIndex", QObject::tr( "Label z-index" ), QgsPropertyDefinition::Double, origin ) },
     { QgsPalLayerSettings::Show, QgsPropertyDefinition( "Show", QObject::tr( "Show label" ), QgsPropertyDefinition::Boolean, origin ) },
     { QgsPalLayerSettings::AlwaysShow, QgsPropertyDefinition( "AlwaysShow", QObject::tr( "Always show label" ), QgsPropertyDefinition::Boolean, origin ) },
-    { QgsPalLayerSettings::CalloutDraw, QgsPropertyDefinition( "CalloutDraw", QObject::tr( "Draw callout" ), QgsPropertyDefinition::Boolean, origin ) },
-    { QgsPalLayerSettings::LabelAllParts, QgsPropertyDefinition( "LabelAllParts", QObject::tr( "Label all parts" ), QgsPropertyDefinition::Boolean, origin ) },
   };
 }
 
-Q_NOWARN_DEPRECATED_PUSH // because of deprecated members
 QgsPalLayerSettings::QgsPalLayerSettings()
 {
   initPropertyDefinitions();
@@ -254,6 +246,7 @@ QgsPalLayerSettings::QgsPalLayerSettings()
   isExpression = false;
   fieldIndex = 0;
 
+  previewBkgrdColor = Qt::white;
   useSubstitutions = false;
 
   // text formatting
@@ -308,19 +301,14 @@ QgsPalLayerSettings::QgsPalLayerSettings()
   obstacleFactor = 1.0;
   obstacleType = PolygonInterior;
   zIndex = 0.0;
-
-  mCallout.reset( QgsApplication::calloutRegistry()->defaultCallout() );
 }
-Q_NOWARN_DEPRECATED_POP
 
-Q_NOWARN_DEPRECATED_PUSH // because of deprecated members
 QgsPalLayerSettings::QgsPalLayerSettings( const QgsPalLayerSettings &s )
   : fieldIndex( 0 )
   , mDataDefinedProperties( s.mDataDefinedProperties )
 {
   *this = s;
 }
-Q_NOWARN_DEPRECATED_POP
 
 QgsPalLayerSettings &QgsPalLayerSettings::operator=( const QgsPalLayerSettings &s )
 {
@@ -334,9 +322,7 @@ QgsPalLayerSettings &QgsPalLayerSettings::operator=( const QgsPalLayerSettings &
   // text style
   fieldName = s.fieldName;
   isExpression = s.isExpression;
-  Q_NOWARN_DEPRECATED_PUSH
   previewBkgrdColor = s.previewBkgrdColor;
-  Q_NOWARN_DEPRECATED_POP
   substitutions = s.substitutions;
   useSubstitutions = s.useSubstitutions;
 
@@ -378,9 +364,6 @@ QgsPalLayerSettings &QgsPalLayerSettings::operator=( const QgsPalLayerSettings &
   repeatDistance = s.repeatDistance;
   repeatDistanceUnit = s.repeatDistanceUnit;
   repeatDistanceMapUnitScale = s.repeatDistanceMapUnitScale;
-  overrunDistance = s.overrunDistance;
-  overrunDistanceUnit = s.overrunDistanceUnit;
-  overrunDistanceMapUnitScale = s.overrunDistanceMapUnitScale;
 
   // rendering
   scaleVisibility = s.scaleVisibility;
@@ -405,17 +388,14 @@ QgsPalLayerSettings &QgsPalLayerSettings::operator=( const QgsPalLayerSettings &
   mFormat = s.mFormat;
   mDataDefinedProperties = s.mDataDefinedProperties;
 
-  mCallout.reset( s.mCallout ? s.mCallout->clone() : nullptr );
-
   geometryGenerator = s.geometryGenerator;
   geometryGeneratorEnabled = s.geometryGeneratorEnabled;
   geometryGeneratorType = s.geometryGeneratorType;
-  layerType = s.layerType;
 
   return *this;
 }
 
-bool QgsPalLayerSettings::prepare( QgsRenderContext &context, QSet<QString> &attributeNames, const QgsFields &fields, const QgsMapSettings &mapSettings, const QgsCoordinateReferenceSystem &crs )
+bool QgsPalLayerSettings::prepare( const QgsRenderContext &context, QSet<QString> &attributeNames, const QgsFields &fields, const QgsMapSettings &mapSettings, const QgsCoordinateReferenceSystem &crs )
 {
   if ( drawLabels )
   {
@@ -524,57 +504,12 @@ bool QgsPalLayerSettings::prepare( QgsRenderContext &context, QSet<QString> &att
     }
   }
 
-  if ( mCallout )
-  {
-    const auto referencedColumns = mCallout->referencedFields( context );
-    for ( const QString &name : referencedColumns )
-    {
-      attributeNames.insert( name );
-    }
-  }
-
   return true;
 }
 
-void QgsPalLayerSettings::startRender( QgsRenderContext &context )
-{
-  if ( mRenderStarted )
-  {
-    qWarning( "Start render called for when a previous render was already underway!!" );
-    return;
-  }
-
-  if ( mCallout )
-  {
-    mCallout->startRender( context );
-  }
-
-  mRenderStarted = true;
-}
-
-void QgsPalLayerSettings::stopRender( QgsRenderContext &context )
-{
-  if ( !mRenderStarted )
-  {
-    qWarning( "Stop render called for QgsPalLayerSettings without a startRender call!" );
-    return;
-  }
-
-  if ( mCallout )
-  {
-    mCallout->stopRender( context );
-  }
-
-  mRenderStarted = false;
-}
 
 QgsPalLayerSettings::~QgsPalLayerSettings()
 {
-  if ( mRenderStarted )
-  {
-    qWarning( "stopRender was not called on QgsPalLayerSettings object!" );
-  }
-
   // pal layer is deleted internally in PAL
 
   delete expression;
@@ -594,6 +529,13 @@ QgsExpression *QgsPalLayerSettings::getLabelExpression()
     expression = new QgsExpression( fieldName );
   }
   return expression;
+}
+
+static Qt::PenJoinStyle _decodePenJoinStyle( const QString &str )
+{
+  if ( str.compare( QLatin1String( "Miter" ), Qt::CaseInsensitive ) == 0 ) return Qt::MiterJoin;
+  if ( str.compare( QLatin1String( "Round" ), Qt::CaseInsensitive ) == 0 ) return Qt::RoundJoin;
+  return Qt::BevelJoin; // "Bevel"
 }
 
 QString updateDataDefinedString( const QString &value )
@@ -706,9 +648,7 @@ void QgsPalLayerSettings::readFromLayerCustomProperties( QgsVectorLayer *layer )
   // text style
   fieldName = layer->customProperty( QStringLiteral( "labeling/fieldName" ) ).toString();
   isExpression = layer->customProperty( QStringLiteral( "labeling/isExpression" ) ).toBool();
-  Q_NOWARN_DEPRECATED_PUSH
   previewBkgrdColor = QColor( layer->customProperty( QStringLiteral( "labeling/previewBkgrdColor" ), QVariant( "#ffffff" ) ).toString() );
-  Q_NOWARN_DEPRECATED_POP
   QDomDocument doc( QStringLiteral( "substitutions" ) );
   doc.setContent( layer->customProperty( QStringLiteral( "labeling/substitutions" ) ).toString() );
   QDomElement replacementElem = doc.firstChildElement( QStringLiteral( "substitutions" ) );
@@ -912,7 +852,7 @@ void QgsPalLayerSettings::readFromLayerCustomProperties( QgsVectorLayer *layer )
   }
 }
 
-void QgsPalLayerSettings::readXml( const QDomElement &elem, const QgsReadWriteContext &context )
+void QgsPalLayerSettings::readXml( QDomElement &elem, const QgsReadWriteContext &context )
 {
   // text style
   QDomElement textStyleElem = elem.firstChildElement( QStringLiteral( "text-style" ) );
@@ -920,9 +860,7 @@ void QgsPalLayerSettings::readXml( const QDomElement &elem, const QgsReadWriteCo
   isExpression = textStyleElem.attribute( QStringLiteral( "isExpression" ) ).toInt();
 
   mFormat.readXml( elem, context );
-  Q_NOWARN_DEPRECATED_PUSH
   previewBkgrdColor = QColor( textStyleElem.attribute( QStringLiteral( "previewBkgrdColor" ), QStringLiteral( "#ffffff" ) ) );
-  Q_NOWARN_DEPRECATED_POP
   substitutions.readXml( textStyleElem.firstChildElement( QStringLiteral( "substitutions" ) ) );
   useSubstitutions = textStyleElem.attribute( QStringLiteral( "useSubstitutions" ) ).toInt();
 
@@ -1051,15 +989,9 @@ void QgsPalLayerSettings::readXml( const QDomElement &elem, const QgsReadWriteCo
     repeatDistanceMapUnitScale = QgsSymbolLayerUtils::decodeMapUnitScale( placementElem.attribute( QStringLiteral( "repeatDistanceMapUnitScale" ) ) );
   }
 
-  overrunDistance = placementElem.attribute( QStringLiteral( "overrunDistance" ), QStringLiteral( "0" ) ).toDouble();
-  overrunDistanceUnit = QgsUnitTypes::decodeRenderUnit( placementElem.attribute( QStringLiteral( "overrunDistanceUnit" ) ) );
-  overrunDistanceMapUnitScale = QgsSymbolLayerUtils::decodeMapUnitScale( placementElem.attribute( QStringLiteral( "overrunDistanceMapUnitScale" ) ) );
-
   geometryGenerator = placementElem.attribute( QStringLiteral( "geometryGenerator" ) );
   geometryGeneratorEnabled = placementElem.attribute( QStringLiteral( "geometryGeneratorEnabled" ) ).toInt();
   geometryGeneratorType = qgsEnumKeyToValue( placementElem.attribute( QStringLiteral( "geometryGeneratorType" ) ), QgsWkbTypes::PointGeometry );
-
-  layerType = qgsEnumKeyToValue( placementElem.attribute( QStringLiteral( "layerType" ) ), QgsWkbTypes::UnknownGeometry );
 
   // rendering
   QDomElement renderingElem = elem.firstChildElement( QStringLiteral( "rendering" ) );
@@ -1136,25 +1068,19 @@ void QgsPalLayerSettings::readXml( const QDomElement &elem, const QgsReadWriteCo
     mDataDefinedProperties.setProperty( MaxScale, QgsProperty() );
   }
 
-  // TODO - replace with registry when multiple callout styles exist
-  const QString calloutType = elem.attribute( QStringLiteral( "calloutType" ) );
-  if ( calloutType.isEmpty() )
-    mCallout.reset( QgsApplication::calloutRegistry()->defaultCallout() );
-  else
-  {
-    mCallout.reset( QgsApplication::calloutRegistry()->createCallout( calloutType, elem.firstChildElement( QStringLiteral( "callout" ) ), context ) );
-    if ( !mCallout )
-      mCallout.reset( QgsApplication::calloutRegistry()->defaultCallout() );
-  }
+
 }
 
-QDomElement QgsPalLayerSettings::writeXml( QDomDocument &doc, const QgsReadWriteContext &context ) const
+
+
+QDomElement QgsPalLayerSettings::writeXml( QDomDocument &doc, const QgsReadWriteContext &context )
 {
   QDomElement textStyleElem = mFormat.writeXml( doc, context );
 
   // text style
   textStyleElem.setAttribute( QStringLiteral( "fieldName" ), fieldName );
   textStyleElem.setAttribute( QStringLiteral( "isExpression" ), isExpression );
+  textStyleElem.setAttribute( QStringLiteral( "previewBkgrdColor" ), previewBkgrdColor.name() );
   QDomElement replacementElem = doc.createElement( QStringLiteral( "substitutions" ) );
   substitutions.writeXml( replacementElem, doc );
   textStyleElem.appendChild( replacementElem );
@@ -1200,16 +1126,11 @@ QDomElement QgsPalLayerSettings::writeXml( QDomDocument &doc, const QgsReadWrite
   placementElem.setAttribute( QStringLiteral( "repeatDistance" ), repeatDistance );
   placementElem.setAttribute( QStringLiteral( "repeatDistanceUnits" ), QgsUnitTypes::encodeUnit( repeatDistanceUnit ) );
   placementElem.setAttribute( QStringLiteral( "repeatDistanceMapUnitScale" ), QgsSymbolLayerUtils::encodeMapUnitScale( repeatDistanceMapUnitScale ) );
-  placementElem.setAttribute( QStringLiteral( "overrunDistance" ), overrunDistance );
-  placementElem.setAttribute( QStringLiteral( "overrunDistanceUnit" ), QgsUnitTypes::encodeUnit( overrunDistanceUnit ) );
-  placementElem.setAttribute( QStringLiteral( "overrunDistanceMapUnitScale" ), QgsSymbolLayerUtils::encodeMapUnitScale( overrunDistanceMapUnitScale ) );
 
   placementElem.setAttribute( QStringLiteral( "geometryGenerator" ), geometryGenerator );
   placementElem.setAttribute( QStringLiteral( "geometryGeneratorEnabled" ), geometryGeneratorEnabled );
   const QMetaEnum metaEnum( QMetaEnum::fromType<QgsWkbTypes::GeometryType>() );
   placementElem.setAttribute( QStringLiteral( "geometryGeneratorType" ), metaEnum.valueToKey( geometryGeneratorType ) );
-
-  placementElem.setAttribute( QStringLiteral( "layerType" ), metaEnum.valueToKey( layerType ) );
 
   // rendering
   QDomElement renderingElem = doc.createElement( QStringLiteral( "rendering" ) );
@@ -1242,125 +1163,7 @@ QDomElement QgsPalLayerSettings::writeXml( QDomDocument &doc, const QgsReadWrite
   elem.appendChild( placementElem );
   elem.appendChild( renderingElem );
   elem.appendChild( ddElem );
-
-  if ( mCallout )
-  {
-    elem.setAttribute( QStringLiteral( "calloutType" ), mCallout->type() );
-    mCallout->saveProperties( doc, elem, context );
-  }
-
   return elem;
-}
-
-void QgsPalLayerSettings::setCallout( QgsCallout *callout )
-{
-  mCallout.reset( callout );
-}
-
-QPixmap QgsPalLayerSettings::labelSettingsPreviewPixmap( const QgsPalLayerSettings &settings, QSize size, const QString &previewText, int padding )
-{
-  // for now, just use format
-  QgsTextFormat tempFormat = settings.format();
-  QPixmap pixmap( size );
-  pixmap.fill( Qt::transparent );
-  QPainter painter;
-  painter.begin( &pixmap );
-
-  painter.setRenderHint( QPainter::Antialiasing );
-
-  QRect rect( 0, 0, size.width(), size.height() );
-
-  // shameless eye candy - use a subtle gradient when drawing background
-  painter.setPen( Qt::NoPen );
-  QColor background1 = tempFormat.previewBackgroundColor();
-  if ( ( background1.lightnessF() < 0.7 ) )
-  {
-    background1 = background1.darker( 125 );
-  }
-  else
-  {
-    background1 = background1.lighter( 125 );
-  }
-  QColor background2 = tempFormat.previewBackgroundColor();
-  QLinearGradient linearGrad( QPointF( 0, 0 ), QPointF( 0, rect.height() ) );
-  linearGrad.setColorAt( 0, background1 );
-  linearGrad.setColorAt( 1, background2 );
-  painter.setBrush( QBrush( linearGrad ) );
-  if ( size.width() > 30 )
-  {
-    painter.drawRoundedRect( rect, 6, 6 );
-  }
-  else
-  {
-    // don't use rounded rect for small previews
-    painter.drawRect( rect );
-  }
-  painter.setBrush( Qt::NoBrush );
-  painter.setPen( Qt::NoPen );
-  padding += 1; // move text away from background border
-
-  QgsRenderContext context;
-  QgsMapToPixel newCoordXForm;
-  newCoordXForm.setParameters( 1, 0, 0, 0, 0, 0 );
-  context.setMapToPixel( newCoordXForm );
-
-  context.setScaleFactor( QgsApplication::desktop()->logicalDpiX() / 25.4 );
-  context.setUseAdvancedEffects( true );
-  context.setPainter( &painter );
-
-  // slightly inset text to account for buffer/background
-  double xtrans = 0;
-  if ( tempFormat.buffer().enabled() )
-    xtrans = context.convertToPainterUnits( tempFormat.buffer().size(), tempFormat.buffer().sizeUnit(), tempFormat.buffer().sizeMapUnitScale() );
-  if ( tempFormat.background().enabled() && tempFormat.background().sizeType() != QgsTextBackgroundSettings::SizeFixed )
-    xtrans = std::max( xtrans, context.convertToPainterUnits( tempFormat.background().size().width(), tempFormat.background().sizeUnit(), tempFormat.background().sizeMapUnitScale() ) );
-
-  double ytrans = 0.0;
-  if ( tempFormat.buffer().enabled() )
-    ytrans = std::max( ytrans, context.convertToPainterUnits( tempFormat.buffer().size(), tempFormat.buffer().sizeUnit(), tempFormat.buffer().sizeMapUnitScale() ) );
-  if ( tempFormat.background().enabled() )
-    ytrans = std::max( ytrans, context.convertToPainterUnits( tempFormat.background().size().height(), tempFormat.background().sizeUnit(), tempFormat.background().sizeMapUnitScale() ) );
-
-  const QStringList text = QStringList() << ( previewText.isEmpty() ? QObject::tr( "Aa" ) : previewText );
-  const double textHeight = QgsTextRenderer::textHeight( context, tempFormat, text, QgsTextRenderer::Rect );
-  QRectF textRect = rect;
-  textRect.setLeft( xtrans + padding );
-  textRect.setWidth( rect.width() - xtrans - 2 * padding );
-
-  if ( textRect.width() > 2000 )
-    textRect.setWidth( 2000 - 2 * padding );
-
-  const double bottom = textRect.height() / 2 + textHeight / 2;
-  textRect.setTop( bottom - textHeight );
-  textRect.setBottom( bottom );
-
-  QgsTextRenderer::drawText( textRect, 0, QgsTextRenderer::AlignCenter, text, context, tempFormat );
-
-  if ( size.width() > 30 )
-  {
-    // draw a label icon
-    const double iconWidth = QFontMetricsF( QFont() ).width( 'X' ) * Qgis::UI_SCALE_FACTOR;
-
-    QgsApplication::getThemeIcon( QStringLiteral( "labelingSingle.svg" ) ).paint( &painter, QRect(
-          rect.width() - iconWidth * 3, rect.height() - iconWidth * 3,
-          iconWidth * 2, iconWidth * 2 ), Qt::AlignRight | Qt::AlignBottom );
-  }
-
-  // draw border on top of text
-  painter.setBrush( Qt::NoBrush );
-  painter.setPen( QPen( tempFormat.previewBackgroundColor().darker( 150 ), 0 ) );
-  if ( size.width() > 30 )
-  {
-    painter.drawRoundedRect( rect, 6, 6 );
-  }
-  else
-  {
-    // don't use rounded rect for small previews
-    painter.drawRect( rect );
-  }
-
-  painter.end();
-  return pixmap;
 }
 
 bool QgsPalLayerSettings::checkMinimumSizeMM( const QgsRenderContext &ct, const QgsGeometry &geom, double minSize ) const
@@ -1514,7 +1317,7 @@ void QgsPalLayerSettings::calculateLabelSize( const QFontMetricsF *fm, const QSt
 #endif
 }
 
-void QgsPalLayerSettings::registerFeature( const QgsFeature &f, QgsRenderContext &context, QgsLabelFeature **labelFeature, QgsGeometry obstacleGeometry, const QgsSymbol *symbol )
+void QgsPalLayerSettings::registerFeature( const QgsFeature &f, QgsRenderContext &context, QgsLabelFeature **labelFeature, QgsGeometry obstacleGeometry )
 {
   // either used in QgsPalLabeling (palLayer is set) or in QgsLabelingEngine (labelFeature is set)
   Q_ASSERT( labelFeature );
@@ -2195,33 +1998,8 @@ void QgsPalLayerSettings::registerFeature( const QgsFeature &f, QgsRenderContext
     }
   }
 
-  // data defined overrun distance
-  context.expressionContext().setOriginalValueVariable( overrunDistance );
-  double overrunDistanceEval = mDataDefinedProperties.valueAsDouble( QgsPalLayerSettings::OverrunDistance, context.expressionContext(), overrunDistance );
-  if ( !qgsDoubleNear( overrunDistanceEval, 0.0 ) )
-  {
-    overrunDistanceEval = context.convertToMapUnits( overrunDistanceEval, overrunDistanceUnit, overrunDistanceMapUnitScale );
-  }
-
-  // we smooth out the overrun label extensions by 1 mm, to avoid little jaggies right at the start or end of the lines
-  // causing the overrun extension to extend out in an undesirable direction. This is hard coded, we don't want to overload
-  // users with options they likely don't need to see...
-  const double overrunSmoothDist = context.convertToMapUnits( 1, QgsUnitTypes::RenderMillimeters );
-
-  bool labelAll = labelPerPart && !dataDefinedPosition;
-  if ( !dataDefinedPosition )
-  {
-    if ( mDataDefinedProperties.isActive( QgsPalLayerSettings::LabelAllParts ) )
-    {
-      context.expressionContext().setOriginalValueVariable( labelPerPart );
-      labelAll = mDataDefinedProperties.valueAsBool( QgsPalLayerSettings::LabelAllParts, context.expressionContext(), labelPerPart );
-    }
-  }
-
   //  feature to the layer
   QgsTextLabelFeature *lf = new QgsTextLabelFeature( feature.id(), std::move( geos_geom_clone ), QSizeF( labelX, labelY ) );
-  lf->setFeature( feature );
-  lf->setSymbol( symbol );
   mFeatsRegPal++;
 
   *labelFeature = lf;
@@ -2237,9 +2015,6 @@ void QgsPalLayerSettings::registerFeature( const QgsFeature &f, QgsRenderContext
   ( *labelFeature )->setRepeatDistance( repeatDist );
   ( *labelFeature )->setLabelText( labelText );
   ( *labelFeature )->setPermissibleZone( permissibleZone );
-  ( *labelFeature )->setOverrunDistance( overrunDistanceEval );
-  ( *labelFeature )->setOverrunSmoothDistance( overrunSmoothDist );
-  ( *labelFeature )->setLabelAllParts( labelAll );
   if ( geosObstacleGeomClone )
   {
     ( *labelFeature )->setObstacleGeometry( std::move( geosObstacleGeomClone ) );
@@ -2421,7 +2196,6 @@ void QgsPalLayerSettings::registerObstacleFeature( const QgsFeature &f, QgsRende
   //  feature to the layer
   *obstacleFeature = new QgsLabelFeature( f.id(), std::move( geos_geom_clone ), QSizeF( 0, 0 ) );
   ( *obstacleFeature )->setIsObstacle( true );
-  ( *obstacleFeature )->setFeature( f );
   mFeatsRegPal++;
 }
 
@@ -2561,7 +2335,7 @@ bool QgsPalLayerSettings::dataDefinedValEval( DataDefinedValueType valType,
 
         if ( !joinstr.isEmpty() )
         {
-          dataDefinedValues.insert( p, QVariant( static_cast< int >( QgsSymbolLayerUtils::decodePenJoinStyle( joinstr ) ) ) );
+          dataDefinedValues.insert( p, QVariant( static_cast< int >( _decodePenJoinStyle( joinstr ) ) ) );
           return true;
         }
         return false;
@@ -2951,8 +2725,27 @@ void QgsPalLayerSettings::parseShapeBackground( QgsRenderContext &context )
 
     if ( !skind.isEmpty() )
     {
-      shapeKind = QgsTextRendererUtils::decodeShapeType( skind );
-      dataDefinedValues.insert( QgsPalLayerSettings::ShapeKind, QVariant( static_cast< int >( shapeKind ) ) );
+      // "Rectangle"
+      QgsTextBackgroundSettings::ShapeType shpkind = QgsTextBackgroundSettings::ShapeRectangle;
+
+      if ( skind.compare( QLatin1String( "Square" ), Qt::CaseInsensitive ) == 0 )
+      {
+        shpkind = QgsTextBackgroundSettings::ShapeSquare;
+      }
+      else if ( skind.compare( QLatin1String( "Ellipse" ), Qt::CaseInsensitive ) == 0 )
+      {
+        shpkind = QgsTextBackgroundSettings::ShapeEllipse;
+      }
+      else if ( skind.compare( QLatin1String( "Circle" ), Qt::CaseInsensitive ) == 0 )
+      {
+        shpkind = QgsTextBackgroundSettings::ShapeCircle;
+      }
+      else if ( skind.compare( QLatin1String( "SVG" ), Qt::CaseInsensitive ) == 0 )
+      {
+        shpkind = QgsTextBackgroundSettings::ShapeSVG;
+      }
+      shapeKind = shpkind;
+      dataDefinedValues.insert( QgsPalLayerSettings::ShapeKind, QVariant( static_cast< int >( shpkind ) ) );
     }
   }
 
@@ -2980,8 +2773,15 @@ void QgsPalLayerSettings::parseShapeBackground( QgsRenderContext &context )
 
     if ( !stype.isEmpty() )
     {
-      shpSizeType = QgsTextRendererUtils::decodeBackgroundSizeType( stype );
-      dataDefinedValues.insert( QgsPalLayerSettings::ShapeSizeType, QVariant( static_cast< int >( shpSizeType ) ) );
+      // "Buffer"
+      QgsTextBackgroundSettings::SizeType sizType = QgsTextBackgroundSettings::SizeBuffer;
+
+      if ( stype.compare( QLatin1String( "Fixed" ), Qt::CaseInsensitive ) == 0 )
+      {
+        sizType = QgsTextBackgroundSettings::SizeFixed;
+      }
+      shpSizeType = sizType;
+      dataDefinedValues.insert( QgsPalLayerSettings::ShapeSizeType, QVariant( static_cast< int >( sizType ) ) );
     }
   }
 
@@ -3009,16 +2809,7 @@ void QgsPalLayerSettings::parseShapeBackground( QgsRenderContext &context )
   {
     skip = true;
   }
-  if ( shapeKind == QgsTextBackgroundSettings::ShapeMarkerSymbol
-       && ( !background.markerSymbol()
-            || ( background.markerSymbol()
-                 && shpSizeType == QgsTextBackgroundSettings::SizeFixed
-                 && ddShpSizeX == 0.0 ) ) )
-  {
-    skip = true;
-  }
   if ( shapeKind != QgsTextBackgroundSettings::ShapeSVG
-       && shapeKind != QgsTextBackgroundSettings::ShapeMarkerSymbol
        && shpSizeType == QgsTextBackgroundSettings::SizeFixed
        && ( ddShpSizeX == 0.0 || ddShpSizeY == 0.0 ) )
   {
@@ -3049,7 +2840,16 @@ void QgsPalLayerSettings::parseShapeBackground( QgsRenderContext &context )
     if ( !rotstr.isEmpty() )
     {
       // "Sync"
-      QgsTextBackgroundSettings::RotationType rottype = QgsTextRendererUtils::decodeBackgroundRotationType( rotstr );
+      QgsTextBackgroundSettings::RotationType rottype = QgsTextBackgroundSettings::RotationSync;
+
+      if ( rotstr.compare( QLatin1String( "Offset" ), Qt::CaseInsensitive ) == 0 )
+      {
+        rottype = QgsTextBackgroundSettings::RotationOffset;
+      }
+      else if ( rotstr.compare( QLatin1String( "Fixed" ), Qt::CaseInsensitive ) == 0 )
+      {
+        rottype = QgsTextBackgroundSettings::RotationFixed;
+      }
       dataDefinedValues.insert( QgsPalLayerSettings::ShapeRotationType, QVariant( static_cast< int >( rottype ) ) );
     }
   }
@@ -3148,7 +2948,21 @@ void QgsPalLayerSettings::parseDropShadow( QgsRenderContext &context )
 
     if ( !str.isEmpty() )
     {
-      QgsTextShadowSettings::ShadowPlacement shdwtype = QgsTextRendererUtils::decodeShadowPlacementType( str );
+      // "Lowest"
+      QgsTextShadowSettings::ShadowPlacement shdwtype = QgsTextShadowSettings::ShadowLowest;
+
+      if ( str.compare( QLatin1String( "Text" ), Qt::CaseInsensitive ) == 0 )
+      {
+        shdwtype = QgsTextShadowSettings::ShadowText;
+      }
+      else if ( str.compare( QLatin1String( "Buffer" ), Qt::CaseInsensitive ) == 0 )
+      {
+        shdwtype = QgsTextShadowSettings::ShadowBuffer;
+      }
+      else if ( str.compare( QLatin1String( "Background" ), Qt::CaseInsensitive ) == 0 )
+      {
+        shdwtype = QgsTextShadowSettings::ShadowShape;
+      }
       dataDefinedValues.insert( QgsPalLayerSettings::ShadowUnder, QVariant( static_cast< int >( shdwtype ) ) );
     }
   }

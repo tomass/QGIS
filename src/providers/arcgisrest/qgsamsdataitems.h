@@ -22,6 +22,10 @@
 #include "qgswkbtypes.h"
 #include "qgsdataitemprovider.h"
 
+#ifdef HAVE_GUI
+#include "qgsdataitemguiprovider.h"
+#endif
+
 
 class QgsAmsRootItem : public QgsDataCollectionItem
 {
@@ -34,12 +38,14 @@ class QgsAmsRootItem : public QgsDataCollectionItem
     QVariant sortKey() const override { return 12; }
 
 #ifdef HAVE_GUI
+    QList<QAction *> actions( QWidget *parent ) override;
     QWidget *paramWidget() override;
 #endif
 
   public slots:
 #ifdef HAVE_GUI
     void onConnectionsChanged();
+    void newConnection();
 #endif
 };
 
@@ -52,6 +58,16 @@ class QgsAmsConnectionItem : public QgsDataCollectionItem
     QVector<QgsDataItem *> createChildren() override;
     bool equal( const QgsDataItem *other ) override;
     QString url() const;
+#ifdef HAVE_GUI
+    QList<QAction *> actions( QWidget *parent ) override;
+#endif
+
+  public slots:
+#ifdef HAVE_GUI
+    void editConnection();
+    void deleteConnection();
+    void refreshConnection();
+#endif
 
   private:
     QString mConnName;
@@ -102,11 +118,32 @@ class QgsAmsLayerItem : public QgsLayerItem
 class QgsAmsDataItemProvider : public QgsDataItemProvider
 {
   public:
-    QString name() override;
+    QString name() override { return QStringLiteral( "AMS" ); }
 
-    int capabilities() const override;
+    int capabilities() override { return QgsDataProvider::Net; }
 
     QgsDataItem *createDataItem( const QString &path, QgsDataItem *parentItem ) override;
 };
+
+
+#ifdef HAVE_GUI
+
+class QgsAmsItemGuiProvider : public QObject, public QgsDataItemGuiProvider
+{
+    Q_OBJECT
+
+  public:
+
+    QgsAmsItemGuiProvider() = default;
+
+    QString name() override;
+
+    void populateContextMenu( QgsDataItem *item, QMenu *menu,
+                              const QList<QgsDataItem *> &selectedItems, QgsDataItemGuiContext context ) override;
+
+
+};
+
+#endif
 
 #endif // QGSAMSDATAITEMS_H

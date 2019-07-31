@@ -25,7 +25,6 @@
 #include "qgscoordinatereferencesystem.h"
 #include "qgsunittypes.h"
 #include "qgssettings.h"
-#include "qgsgui.h"
 
 #include <QCloseEvent>
 #include <QLocale>
@@ -39,7 +38,6 @@ QgsMeasureDialog::QgsMeasureDialog( QgsMeasureTool *tool, Qt::WindowFlags f )
   , mCanvas( tool->canvas() )
 {
   setupUi( this );
-  QgsGui::instance()->enableAutoGeometryRestore( this );
   connect( buttonBox, &QDialogButtonBox::helpRequested, this, &QgsMeasureDialog::showHelp );
 
   QPushButton *nb = new QPushButton( tr( "&New" ) );
@@ -312,6 +310,7 @@ void QgsMeasureDialog::closeEvent( QCloseEvent *e )
 void QgsMeasureDialog::restorePosition()
 {
   QgsSettings settings;
+  restoreGeometry( settings.value( QStringLiteral( "Windows/Measure/geometry" ) ).toByteArray() );
   int wh;
   if ( mMeasureArea )
     wh = settings.value( QStringLiteral( "Windows/Measure/hNoTable" ), 70 ).toInt();
@@ -324,6 +323,7 @@ void QgsMeasureDialog::restorePosition()
 void QgsMeasureDialog::saveWindowLocation()
 {
   QgsSettings settings;
+  settings.setValue( QStringLiteral( "Windows/Measure/geometry" ), saveGeometry() );
   const QString &key = mMeasureArea ? "/Windows/Measure/hNoTable" : "/Windows/Measure/h";
   settings.setValue( key, height() );
 }

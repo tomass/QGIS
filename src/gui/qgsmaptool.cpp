@@ -72,7 +72,7 @@ QgsRectangle QgsMapTool::toLayerCoordinates( const QgsMapLayer *layer, const Qgs
   return mCanvas->mapSettings().mapToLayerCoordinates( layer, rect );
 }
 
-QPoint QgsMapTool::toCanvasCoordinates( const QgsPointXY &point ) const
+QPoint QgsMapTool::toCanvasCoordinates( const QgsPointXY &point )
 {
   qreal x = point.x(), y = point.y();
   mCanvas->getCoordinateTransform()->transformInPlace( x, y );
@@ -195,7 +195,7 @@ bool QgsMapTool::gestureEvent( QGestureEvent *e )
   return true;
 }
 
-QgsMapCanvas *QgsMapTool::canvas() const
+QgsMapCanvas *QgsMapTool::canvas()
 {
   return mCanvas;
 }

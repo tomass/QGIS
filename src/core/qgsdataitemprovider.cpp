@@ -17,13 +17,6 @@
 
 // no implementation currently
 
-QVector<QgsDataItem *> QgsDataItemProvider::createDataItems( const QString &path, QgsDataItem *parentItem )
-{
-  Q_UNUSED( path )
-  Q_UNUSED( parentItem )
-  return QVector<QgsDataItem *>();
-}
-
 bool QgsDataItemProvider::handlesDirectoryPath( const QString & )
 {
   return false;

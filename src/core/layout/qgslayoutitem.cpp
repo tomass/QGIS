@@ -1125,11 +1125,6 @@ QgsExpressionContext QgsLayoutItem::createExpressionContext() const
   return context;
 }
 
-bool QgsLayoutItem::accept( QgsStyleEntityVisitorInterface *visitor ) const
-{
-  Q_UNUSED( visitor );
-  return true;
-}
 
 void QgsLayoutItem::refresh()
 {

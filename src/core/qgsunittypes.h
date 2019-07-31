@@ -103,8 +103,6 @@ class CORE_EXPORT QgsUnitTypes
       AngleMinutesOfArc, //!< Minutes of arc
       AngleSecondsOfArc, //!< Seconds of arc
       AngleTurn, //!< Turn/revolutions
-      AngleMilliradiansSI, //!< Angular milliradians (SI definition, 1/1000 of radian)
-      AngleMilNATO, //!< Angular mil (NATO definition, 6400 mil = 2PI radians)
       AngleUnknownUnit, //!< Unknown angle unit
     };
     Q_ENUM( AngleUnit )

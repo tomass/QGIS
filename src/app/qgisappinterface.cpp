@@ -796,7 +796,7 @@ void QgisAppInterface::takeAppScreenShots( const QString &saveDirectory, const i
   qgis->takeAppScreenShots( saveDirectory, categories );
 }
 
-QgsBrowserGuiModel *QgisAppInterface::browserModel()
+QgsBrowserModel *QgisAppInterface::browserModel()
 {
   return qgis->mBrowserModel;
 }

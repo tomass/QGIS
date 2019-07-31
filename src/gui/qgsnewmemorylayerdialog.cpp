@@ -28,6 +28,7 @@
 
 #include <QPushButton>
 #include <QComboBox>
+#include <QLibrary>
 #include <QUuid>
 #include <QFileDialog>
 

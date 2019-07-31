@@ -24,7 +24,6 @@
 #include "qgis_sip.h"
 
 class QgsColorBrewerColorRamp;
-class QDialogButtonBox;
 
 /**
  * \ingroup gui
@@ -110,12 +109,6 @@ class GUI_EXPORT QgsColorBrewerColorRampDialog : public QDialog
      */
     void setRamp( const QgsColorBrewerColorRamp &ramp ) { mWidget->setRamp( ramp ); }
 
-    /**
-     * Returns a reference to the dialog's button box.
-     * \since QGIS 3.10
-     */
-    QDialogButtonBox *buttonBox() const;
-
   signals:
 
     //! Emitted when the dialog settings change
@@ -124,7 +117,6 @@ class GUI_EXPORT QgsColorBrewerColorRampDialog : public QDialog
   private:
 
     QgsColorBrewerColorRampWidget *mWidget = nullptr;
-    QDialogButtonBox *mButtonBox = nullptr;
 
   private slots:
 

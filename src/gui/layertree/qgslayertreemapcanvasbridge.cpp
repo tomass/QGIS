@@ -115,7 +115,8 @@ void QgsLayerTreeMapCanvasBridge::setCanvasLayers()
     switch ( projectCrsBehavior )
     {
       case QgsGui::UseCrsOfFirstLayerAdded:
-        QgsProject::instance()->setCrs( mFirstCRS, true );
+        QgsProject::instance()->setCrs( mFirstCRS );
+        QgsProject::instance()->setEllipsoid( mFirstCRS.ellipsoidAcronym() );
         break;
 
       case QgsGui::UsePresetCrs:

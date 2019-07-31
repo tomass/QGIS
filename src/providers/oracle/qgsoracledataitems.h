@@ -24,7 +24,6 @@
 #include "qgsoraclesourceselect.h"
 #include "qgsmimedatautils.h"
 #include "qgsvectorlayerexporter.h"
-#include "qgsdataitemprovider.h"
 
 class QSqlDatabase;
 
@@ -119,17 +118,6 @@ class QgsOracleLayerItem : public QgsLayerItem
 
   private:
     QgsOracleLayerProperty mLayerProperty;
-};
-
-//! Provider for ORACLE root data item
-class QgsOracleDataItemProvider : public QgsDataItemProvider
-{
-  public:
-    QString name() override;
-
-    int capabilities() const override;
-
-    QgsDataItem *createDataItem( const QString &pathIn, QgsDataItem *parentItem ) override;
 };
 
 #endif // QGSORACLEDATAITEMS_H

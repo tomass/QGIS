@@ -204,7 +204,6 @@ class QgsLayoutMapLabelingWidget: public QgsLayoutItemBaseWidget, private Ui::Qg
     void labelMarginChanged( double val );
     void labelMarginUnitsChanged();
     void showPartialsToggled( bool checked );
-    void showUnplacedToggled( bool checked );
 
   private:
     QPointer< QgsLayoutItemMap > mMapItem;

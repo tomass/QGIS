@@ -48,7 +48,6 @@ class slope(GdalAlgorithm):
     COMPUTE_EDGES = 'COMPUTE_EDGES'
     ZEVENBERGEN = 'ZEVENBERGEN'
     OPTIONS = 'OPTIONS'
-    EXTRA = 'EXTRA'
     OUTPUT = 'OUTPUT'
 
     def __init__(self):
@@ -84,13 +83,6 @@ class slope(GdalAlgorithm):
             'widget_wrapper': {
                 'class': 'processing.algs.gdal.ui.RasterOptionsWidget.RasterOptionsWidgetWrapper'}})
         self.addParameter(options_param)
-
-        extra_param = QgsProcessingParameterString(self.EXTRA,
-                                                   self.tr('Additional command-line parameters'),
-                                                   defaultValue=None,
-                                                   optional=True)
-        extra_param.setFlags(extra_param.flags() | QgsProcessingParameterDefinition.FlagAdvanced)
-        self.addParameter(extra_param)
 
         self.addParameter(QgsProcessingParameterRasterDestination(self.OUTPUT, self.tr('Slope')))
 
@@ -143,9 +135,5 @@ class slope(GdalAlgorithm):
         options = self.parameterAsString(parameters, self.OPTIONS, context)
         if options:
             arguments.extend(GdalUtils.parseCreationOptions(options))
-
-        if self.EXTRA in parameters and parameters[self.EXTRA] not in (None, ''):
-            extra = self.parameterAsString(parameters, self.EXTRA, context)
-            arguments.append(extra)
 
         return [self.commandName(), GdalUtils.escapeAndJoin(arguments)]

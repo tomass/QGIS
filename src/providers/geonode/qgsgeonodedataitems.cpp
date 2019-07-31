@@ -16,6 +16,8 @@
 #include "qgslogger.h"
 #include "qgsgeonodedataitems.h"
 #include "qgsproviderregistry.h"
+#include "qgsnewhttpconnection.h"
+#include "qgsgeonodenewconnection.h"
 #include "qgsgeonoderequest.h"
 
 typedef QList<QgsDataItemProvider *> *dataItemProviders_t();
@@ -64,6 +66,26 @@ QVector<QgsDataItem *> QgsGeoNodeConnectionItem::createChildren()
   return services;
 }
 
+QList<QAction *> QgsGeoNodeConnectionItem::actions( QWidget *parent )
+{
+  QAction *actionEdit = new QAction( tr( "Edit Connection…" ), parent );
+  QAction *actionDelete = new QAction( tr( "Delete Connection" ), parent );
+  connect( actionEdit, &QAction::triggered, this, &QgsGeoNodeConnectionItem::editConnection );
+  connect( actionDelete, &QAction::triggered, this, &QgsGeoNodeConnectionItem::deleteConnection );
+  return QList<QAction *>() << actionEdit << actionDelete;
+}
+
+void QgsGeoNodeConnectionItem::editConnection()
+{
+  QgsGeoNodeNewConnection nc( nullptr, mConnection->connectionName() );
+  nc.setWindowTitle( tr( "Modify GeoNode connection" ) );
+
+  if ( nc.exec() )
+  {
+    // the parent should be updated
+    mParent->refresh();
+  }
+}
 
 QgsGeoNodeServiceItem::QgsGeoNodeServiceItem( QgsDataItem *parent, QgsGeoNodeConnection *conn, QString serviceName, QString path )
   : QgsDataCollectionItem( parent, serviceName, path )
@@ -96,9 +118,16 @@ QVector<QgsDataItem *> QgsGeoNodeServiceItem::createChildren()
   while ( !skipProvider )
   {
     const QString &key = mServiceName != QStringLiteral( "WFS" ) ? QStringLiteral( "wms" ) : mServiceName;
+    std::unique_ptr< QLibrary > library( QgsProviderRegistry::instance()->createProviderLibrary( key ) );
+    if ( !library )
+    {
+      skipProvider = true;
+      continue;
+    }
 
-    const QList<QgsDataItemProvider *> providerList = QgsProviderRegistry::instance()->dataItemProviders( key );
-    if ( providerList.isEmpty() )
+    dataItemProviders_t *dataItemProvidersFn = reinterpret_cast< dataItemProviders_t * >( cast_to_fptr( library->resolve( "dataItemProviders" ) ) );
+    dataItem_t *dItem = ( dataItem_t * ) cast_to_fptr( library->resolve( "dataItem" ) );
+    if ( !dItem && !dataItemProvidersFn )
     {
       skipProvider = true;
       continue;
@@ -107,7 +136,8 @@ QVector<QgsDataItem *> QgsGeoNodeServiceItem::createChildren()
     QString path = pathPrefix + mName;
 
     QVector<QgsDataItem *> items;
-    for ( QgsDataItemProvider *pr : providerList )
+    QList<QgsDataItemProvider *> *providerList = dataItemProvidersFn();
+    for ( QgsDataItemProvider *pr : qgis::as_const( *providerList ) )
     {
       if ( !pr->name().startsWith( mServiceName ) )
         continue;
@@ -175,7 +205,7 @@ QVector<QgsDataItem *> QgsGeoNodeServiceItem::createChildren()
 }
 
 // reset path recursively
-void QgsGeoNodeServiceItem::replacePath( QgsDataItem *item, const QString &before, const QString &after )
+void QgsGeoNodeServiceItem::replacePath( QgsDataItem *item, QString before, QString after )
 {
   item->setPath( item->path().replace( before, after ) );
   const QVector< QgsDataItem * > children = item->children();
@@ -185,8 +215,7 @@ void QgsGeoNodeServiceItem::replacePath( QgsDataItem *item, const QString &befor
   }
 }
 
-QgsGeoNodeRootItem::QgsGeoNodeRootItem( QgsDataItem *parent, QString name, QString path )
-  : QgsDataCollectionItem( parent, name, path )
+QgsGeoNodeRootItem::QgsGeoNodeRootItem( QgsDataItem *parent, QString name, QString path ) : QgsDataCollectionItem( parent, name, path )
 {
   mCapabilities |= Fast;
   {
@@ -210,16 +239,23 @@ QVector<QgsDataItem *> QgsGeoNodeRootItem::createChildren()
   return connections;
 }
 
-
-QString QgsGeoNodeDataItemProvider::name()
+QList<QAction *> QgsGeoNodeRootItem::actions( QWidget *parent )
 {
-  return QStringLiteral( "GeoNode" );
+  QAction *actionNew = new QAction( tr( "New Connection…" ), parent );
+  connect( actionNew, &QAction::triggered, this, &QgsGeoNodeRootItem::newConnection );
+  return QList<QAction *>() << actionNew;
 }
 
-int QgsGeoNodeDataItemProvider::capabilities() const
+void QgsGeoNodeRootItem::newConnection()
 {
-  return QgsDataProvider::Net;
+  QgsGeoNodeNewConnection nc( nullptr );
+
+  if ( nc.exec() )
+  {
+    refresh();
+  }
 }
+
 
 QgsDataItem *QgsGeoNodeDataItemProvider::createDataItem( const QString &path, QgsDataItem *parentItem )
 {
@@ -241,4 +277,13 @@ QgsDataItem *QgsGeoNodeDataItemProvider::createDataItem( const QString &path, Qg
   }
 
   return nullptr;
+}
+
+QGISEXTERN QList<QgsDataItemProvider *> *dataItemProviders()
+{
+  QList<QgsDataItemProvider *> *providers = new QList<QgsDataItemProvider *>();
+
+  *providers << new QgsGeoNodeDataItemProvider();
+
+  return providers;
 }

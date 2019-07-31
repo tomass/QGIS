@@ -196,7 +196,7 @@ class GUI_EXPORT QgsStyleManagerDialog : public QDialog, private Ui::QgsStyleMan
     Q_DECL_DEPRECATED void itemChanged( QStandardItem *item ) SIP_DEPRECATED;
 
     /**
-     * Triggered when the current group (or tag) is changed.
+     * Trigerred when the current group (or tag) is changed.
      */
     void groupChanged( const QModelIndex & );
 
@@ -331,10 +331,6 @@ class GUI_EXPORT QgsStyleManagerDialog : public QDialog, private Ui::QgsStyleMan
 
     void copyItemsToDefault();
 
-    void copyItem();
-
-    void pasteItem();
-
   private:
     int selectedItemType();
 
@@ -390,13 +386,7 @@ class GUI_EXPORT QgsStyleManagerDialog : public QDialog, private Ui::QgsStyleMan
     //! Menu for the "Add item" toolbutton when in all symbols mode
     QMenu *mMenuBtnAddItemAll = nullptr;
 
-    //! Menu for the "Add item" toolbutton when in label settings mode
-    QMenu *mMenuBtnAddItemLabelSettings = nullptr;
-
     QAction *mActionCopyToDefault = nullptr;
-
-    QAction *mActionCopyItem = nullptr;
-    QAction *mActionPasteItem = nullptr;
 
     int mBlockGroupUpdates = 0;
 
@@ -404,12 +394,6 @@ class GUI_EXPORT QgsStyleManagerDialog : public QDialog, private Ui::QgsStyleMan
     bool mFavoritesGroupVisible = true;
     bool mSmartGroupVisible = true;
     QString mBaseName;
-
-    bool addTextFormat();
-    bool editTextFormat();
-
-    bool addLabelSettings( QgsWkbTypes::GeometryType type );
-    bool editLabelSettings();
 
     friend class QgsStyleExportImportDialog;
 };

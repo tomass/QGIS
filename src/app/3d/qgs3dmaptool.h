@@ -52,8 +52,6 @@ class Qgs3DMapTool : public QObject
      */
     virtual bool allowsCameraControls() const { return true; }
 
-    Qgs3DMapCanvas *canvas();
-
   protected:
     Qgs3DMapCanvas *mCanvas = nullptr;
 };

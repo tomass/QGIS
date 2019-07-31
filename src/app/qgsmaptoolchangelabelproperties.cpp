@@ -38,7 +38,6 @@ QgsMapToolChangeLabelProperties::QgsMapToolChangeLabelProperties( QgsMapCanvas *
   mPalProperties << QgsPalLayerSettings::Underline;
   mPalProperties << QgsPalLayerSettings::Color;
   mPalProperties << QgsPalLayerSettings::Strikeout;
-  mPalProperties << QgsPalLayerSettings::MultiLineAlignment;
   mPalProperties << QgsPalLayerSettings::BufferSize;
   mPalProperties << QgsPalLayerSettings::BufferColor;
   mPalProperties << QgsPalLayerSettings::LabelDistance;
@@ -48,8 +47,6 @@ QgsMapToolChangeLabelProperties::QgsMapToolChangeLabelProperties( QgsMapCanvas *
   mPalProperties << QgsPalLayerSettings::MinScale;
   mPalProperties << QgsPalLayerSettings::MaxScale;
   mPalProperties << QgsPalLayerSettings::AlwaysShow;
-  mPalProperties << QgsPalLayerSettings::CalloutDraw;
-  mPalProperties << QgsPalLayerSettings::LabelAllParts;
 }
 
 void QgsMapToolChangeLabelProperties::canvasPressEvent( QgsMapMouseEvent *e )
@@ -106,10 +103,7 @@ void QgsMapToolChangeLabelProperties::canvasReleaseEvent( QgsMapMouseEvent *e )
                               mCurrentLabel.pos.providerID,
                               mCurrentLabel.pos.featureId,
                               mCurrentLabel.pos.labelFont,
-                              labeltext,
-                              mCurrentLabel.pos.isPinned,
-                              mCurrentLabel.settings,
-                              nullptr );
+                              labeltext, nullptr );
     d.setMapCanvas( canvas() );
 
     connect( &d, &QgsLabelPropertyDialog::applied, this, &QgsMapToolChangeLabelProperties::dialogPropertiesApplied );

@@ -58,8 +58,8 @@ LabelPosition::LabelPosition( int id, double x1, double y1, double w, double h, 
 {
   type = GEOS_POLYGON;
   nbPoints = 4;
-  x.resize( nbPoints );
-  y.resize( nbPoints );
+  x = new double[nbPoints];
+  y = new double[nbPoints];
 
   // alpha take his value bw 0 and 2*pi rad
   while ( this->alpha > 2 * M_PI )

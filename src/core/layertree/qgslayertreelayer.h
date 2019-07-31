@@ -128,20 +128,6 @@ class CORE_EXPORT QgsLayerTreeLayer : public QgsLayerTreeNode
      */
     void resolveReferences( const QgsProject *project, bool looseMatching = false ) override;
 
-    /**
-     * set the expression to evaluate
-     *
-     * \since QGIS 3.10
-     */
-    void setLabelExpression( const QString &expression );
-
-    /**
-     * Returns the expression member of the LayerTreeNode
-     *
-     * \since QGIS 3.10
-     */
-    QString labelExpression() const { return mLabelExpression; }
-
   signals:
 
     /**
@@ -162,8 +148,6 @@ class CORE_EXPORT QgsLayerTreeLayer : public QgsLayerTreeNode
     QgsMapLayerRef mRef;
     //! Layer name - only used if layer does not exist or if mUseLayerName is false
     QString mLayerName;
-    //! Expression to evaluate in the legend
-    QString mLabelExpression;
 
     //!
     bool mUseLayerName = true;

@@ -28,7 +28,6 @@ class QgsMapCanvas;
 class QgsRuleBasedLabelingWidget;
 class QgsVectorLayer;
 class QgsMapLayer;
-class QgsMessageBar;
 
 /**
  * Master widget for configuration of labeling of a vector layer
@@ -37,7 +36,7 @@ class QgsLabelingWidget : public QgsMapLayerConfigWidget, private Ui::QgsLabelin
 {
     Q_OBJECT
   public:
-    QgsLabelingWidget( QgsVectorLayer *layer, QgsMapCanvas *canvas, QWidget *parent = nullptr, QgsMessageBar *messageBar = nullptr );
+    QgsLabelingWidget( QgsVectorLayer *layer, QgsMapCanvas *canvas, QWidget *parent = nullptr );
 
     /**
      * Returns the labeling gui widget or NULLPTR if none.
@@ -70,7 +69,6 @@ class QgsLabelingWidget : public QgsMapLayerConfigWidget, private Ui::QgsLabelin
   protected:
     QgsVectorLayer *mLayer = nullptr;
     QgsMapCanvas *mCanvas = nullptr;
-    QgsMessageBar *mMessageBar = nullptr;
 
     QWidget *mWidget = nullptr;
     std::unique_ptr< QgsPalLayerSettings > mSimpleSettings;

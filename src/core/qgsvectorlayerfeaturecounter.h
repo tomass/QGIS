@@ -18,7 +18,6 @@
 #include "qgsvectorlayerfeatureiterator.h"
 #include "qgsrenderer.h"
 #include "qgstaskmanager.h"
-#include "qgsfeatureid.h"
 
 /**
  * \ingroup core
@@ -41,14 +40,10 @@ class CORE_EXPORT QgsVectorLayerFeatureCounter : public QgsTask
      */
     QgsVectorLayerFeatureCounter( QgsVectorLayer *layer, const QgsExpressionContext &context = QgsExpressionContext() );
 
-
-    /**
-     * Calculates the feature count and Ids per symbol
-     */
     bool run() override;
 
     /**
-     * Returns the count for each symbol. Only valid after the symbolsCounted()
+     * Gets the count for each symbol. Only valid after the symbolsCounted()
      * signal has been emitted.
      *
      * \note Not available in Python bindings.
@@ -56,28 +51,10 @@ class CORE_EXPORT QgsVectorLayerFeatureCounter : public QgsTask
     QHash<QString, long> symbolFeatureCountMap() const SIP_SKIP;
 
     /**
-     * Returns the feature count for a particular \a legendKey.
+     * Gets the feature count for a particular \a legendKey.
      * If the key has not been found, -1 will be returned.
      */
     long featureCount( const QString &legendKey ) const;
-
-    /**
-     * Returns the QgsFeatureIds for each symbol. Only valid after the symbolsCounted()
-     * signal has been emitted.
-     *
-     * \see symbolFeatureCountMap
-     * \note Not available in Python bindings.
-     * \since QGIS 3.10
-     */
-    QHash<QString, QgsFeatureIds> symbolFeatureIdMap() const SIP_SKIP;
-
-    /**
-     * Returns the feature Ids for a particular \a legendKey.
-     * If the key has not been found an empty QSet will be returned.
-     *
-     * \since QGIS 3.10
-     */
-    QgsFeatureIds featureIds( const QString &symbolkey ) const;
 
   signals:
 
@@ -91,7 +68,6 @@ class CORE_EXPORT QgsVectorLayerFeatureCounter : public QgsTask
     std::unique_ptr<QgsFeatureRenderer> mRenderer;
     QgsExpressionContext mExpressionContext;
     QHash<QString, long> mSymbolFeatureCountMap;
-    QHash<QString, QgsFeatureIds> mSymbolFeatureIdMap;
     int mFeatureCount;
 
 };

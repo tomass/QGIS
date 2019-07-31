@@ -117,11 +117,6 @@ void QgsLayoutItemMapItem::setStackingLayer( QgsMapLayer *layer )
   mStackingLayer.setLayer( layer );
 }
 
-bool QgsLayoutItemMapItem::accept( QgsStyleEntityVisitorInterface * ) const
-{
-  return true;
-}
-
 //
 // QgsLayoutItemMapItemStack
 //

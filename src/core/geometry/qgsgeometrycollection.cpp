@@ -382,28 +382,21 @@ QByteArray QgsGeometryCollection::asWkb() const
 
 QString QgsGeometryCollection::asWkt( int precision ) const
 {
-  QString wkt = wktTypeStr();
-
-  if ( isEmpty() )
-    wkt += QStringLiteral( " EMPTY" );
-  else
+  QString wkt = wktTypeStr() + QLatin1String( " (" );
+  for ( const QgsAbstractGeometry *geom : mGeometries )
   {
-    wkt += QLatin1String( " (" );
-    for ( const QgsAbstractGeometry *geom : mGeometries )
+    QString childWkt = geom->asWkt( precision );
+    if ( wktOmitChildType() )
     {
-      QString childWkt = geom->asWkt( precision );
-      if ( wktOmitChildType() )
-      {
-        childWkt = childWkt.mid( childWkt.indexOf( '(' ) );
-      }
-      wkt += childWkt + ',';
+      childWkt = childWkt.mid( childWkt.indexOf( '(' ) );
     }
-    if ( wkt.endsWith( ',' ) )
-    {
-      wkt.chop( 1 ); // Remove last ','
-    }
-    wkt += ')';
+    wkt += childWkt + ',';
   }
+  if ( wkt.endsWith( ',' ) )
+  {
+    wkt.chop( 1 ); // Remove last ','
+  }
+  wkt += ')';
   return wkt;
 }
 
@@ -648,9 +641,6 @@ bool QgsGeometryCollection::fromCollectionWkt( const QString &wkt, const QVector
     return false;
   }
   mWkbType = parts.first;
-
-  if ( parts.second.compare( QLatin1String( "EMPTY" ), Qt::CaseInsensitive ) == 0 )
-    return true;
 
   QString defChildWkbType = QStringLiteral( "%1%2%3 " ).arg( defaultChildWkbType, is3D() ? QStringLiteral( "Z" ) : QString(), isMeasure() ? QStringLiteral( "M" ) : QString() );
 

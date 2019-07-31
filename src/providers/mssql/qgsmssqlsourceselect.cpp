@@ -30,7 +30,6 @@
 #include "qgssettings.h"
 #include "qgsmssqlconnection.h"
 #include "qgsproject.h"
-#include "qgsgui.h"
 
 #include <QFileDialog>
 #include <QInputDialog>
@@ -124,8 +123,6 @@ QgsMssqlSourceSelect::QgsMssqlSourceSelect( QWidget *parent, Qt::WindowFlags fl,
   : QgsAbstractDataSourceWidget( parent, fl, theWidgetMode )
 {
   setupUi( this );
-  QgsGui::instance()->enableAutoGeometryRestore( this );
-
   connect( btnConnect, &QPushButton::clicked, this, &QgsMssqlSourceSelect::btnConnect_clicked );
   connect( cbxAllowGeometrylessTables, &QCheckBox::stateChanged, this, &QgsMssqlSourceSelect::cbxAllowGeometrylessTables_stateChanged );
   connect( btnNew, &QPushButton::clicked, this, &QgsMssqlSourceSelect::btnNew_clicked );
@@ -190,13 +187,16 @@ QgsMssqlSourceSelect::QgsMssqlSourceSelect( QWidget *parent, Qt::WindowFlags fl,
   connect( mTablesTreeView->selectionModel(), &QItemSelectionModel::selectionChanged, this, &QgsMssqlSourceSelect::treeWidgetSelectionChanged );
 
   QgsSettings settings;
-  mTablesTreeView->setSelectionMode( QAbstractItemView::ExtendedSelection );
+  mTablesTreeView->setSelectionMode( settings.value( QStringLiteral( "qgis/addMSSQLDC" ), false ).toBool() ?
+                                     QAbstractItemView::ExtendedSelection :
+                                     QAbstractItemView::MultiSelection );
 
 
   //for Qt < 4.3.2, passing -1 to include all model columns
   //in search does not seem to work
   mSearchColumnComboBox->setCurrentIndex( 2 );
 
+  restoreGeometry( settings.value( QStringLiteral( "Windows/MSSQLSourceSelect/geometry" ) ).toByteArray() );
   mHoldDialogOpen->setChecked( settings.value( QStringLiteral( "Windows/MSSQLSourceSelect/HoldDialogOpen" ), false ).toBool() );
 
   for ( int i = 0; i < mTableModel.columnCount(); i++ )
@@ -313,9 +313,17 @@ void QgsMssqlSourceSelect::mTablesTreeView_clicked( const QModelIndex &index )
   mBuildQueryButton->setEnabled( index.parent().isValid() );
 }
 
-void QgsMssqlSourceSelect::mTablesTreeView_doubleClicked( const QModelIndex & )
+void QgsMssqlSourceSelect::mTablesTreeView_doubleClicked( const QModelIndex &index )
 {
-  addButtonClicked();
+  QgsSettings settings;
+  if ( settings.value( QStringLiteral( "qgis/addMSSQLDC" ), false ).toBool() )
+  {
+    addButtonClicked();
+  }
+  else
+  {
+    setSql( index );
+  }
 }
 
 void QgsMssqlSourceSelect::mSearchGroupBox_toggled( bool checked )
@@ -394,6 +402,7 @@ QgsMssqlSourceSelect::~QgsMssqlSourceSelect()
   }
 
   QgsSettings settings;
+  settings.setValue( QStringLiteral( "Windows/MSSQLSourceSelect/geometry" ), saveGeometry() );
   settings.setValue( QStringLiteral( "Windows/MSSQLSourceSelect/HoldDialogOpen" ), mHoldDialogOpen->isChecked() );
 
   for ( int i = 0; i < mTableModel.columnCount(); i++ )
@@ -650,11 +659,6 @@ QStringList QgsMssqlSourceSelect::selectedTables()
 QString QgsMssqlSourceSelect::connectionInfo()
 {
   return mConnInfo;
-}
-
-void QgsMssqlSourceSelect::reset()
-{
-  mTablesTreeView->clearSelection();
 }
 
 void QgsMssqlSourceSelect::refresh()

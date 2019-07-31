@@ -54,13 +54,6 @@ Sets tool tip text
 Emitted when user clicks on the indicator
 %End
 
-    void changed();
-%Docstring
-Emitted when the indicator changes state (e.g. icon).
-
-.. versionadded:: 3.10
-%End
-
 };
 
 /************************************************************************

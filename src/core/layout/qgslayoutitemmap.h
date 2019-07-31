@@ -69,8 +69,7 @@ class CORE_EXPORT QgsLayoutItemMap : public QgsLayoutItem
      */
     enum MapItemFlag
     {
-      ShowPartialLabels  = 1 << 0, //!< Whether to draw labels which are partially outside of the map view
-      ShowUnplacedLabels = 1 << 1, //!< Whether to render unplaced labels in the map view
+      ShowPartialLabels  = 1 << 0,  //!< Whether to draw labels which are partially outside of the map view
     };
     Q_DECLARE_FLAGS( MapItemFlags, MapItemFlag )
 
@@ -517,8 +516,6 @@ class CORE_EXPORT QgsLayoutItemMap : public QgsLayoutItem
      * \returns list of errors
      */
     QgsMapRendererJob::Errors renderingErrors() const { return mRenderingErrors; }
-
-    bool accept( QgsStyleEntityVisitorInterface *visitor ) const override;
 
   protected:
 

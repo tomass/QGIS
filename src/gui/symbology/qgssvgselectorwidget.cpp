@@ -23,7 +23,6 @@
 #include "qgssvgcache.h"
 #include "qgssymbollayerutils.h"
 #include "qgssettings.h"
-#include "qgsgui.h"
 
 #include <QAbstractListModel>
 #include <QCheckBox>
@@ -498,5 +497,14 @@ QgsSvgSelectorDialog::QgsSvgSelectorDialog( QWidget *parent, Qt::WindowFlags fl,
 
   mLayout->addWidget( mButtonBox );
   setLayout( mLayout );
+
+  QgsSettings settings;
+  restoreGeometry( settings.value( QStringLiteral( "Windows/SvgSelectorDialog/geometry" ) ).toByteArray() );
+}
+
+QgsSvgSelectorDialog::~QgsSvgSelectorDialog()
+{
+  QgsSettings settings;
+  settings.setValue( QStringLiteral( "Windows/SvgSelectorDialog/geometry" ), saveGeometry() );
 }
 

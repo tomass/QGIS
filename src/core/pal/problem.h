@@ -150,19 +150,7 @@ namespace pal
        */
       void chain_search();
 
-      /**
-       * Solves the labeling problem, selecting the best candidate locations for all labels and returns a list of these
-       * calculated label positions.
-       *
-       * If \a returnInactive is true, then the best positions for ALL labels will be returned, regardless of whether these
-       * labels overlap other labels.
-       *
-       * If the optional \a unlabeled list is specified, it will be filled with a list of all feature labels which could
-       * not be placed in the returned solution (e.g. due to overlaps or other constraints).
-       *
-       * Ownership of the returned labels is not transferred - it resides with the pal object.
-       */
-      QList<LabelPosition *> getSolution( bool returnInactive, QList<LabelPosition *> *unlabeled = nullptr );
+      QList<LabelPosition *> getSolution( bool returnInactive );
 
       PalStat *getStats();
 
@@ -197,17 +185,6 @@ namespace pal
       void init_sol_falp();
 
       static bool compareLabelArea( pal::LabelPosition *l1, pal::LabelPosition *l2 );
-
-      /**
-       * Returns a reference to the list of label positions which correspond to
-       * features with no candidates.
-       *
-       * Ownership of positions added to this list is transferred to the problem.
-       */
-      QList<LabelPosition *> *positionsWithNoCandidates()
-      {
-        return &mPositionsWithNoCandidates;
-      }
 
     private:
 
@@ -255,8 +232,6 @@ namespace pal
       RTree<LabelPosition *, double, 2, double> *candidates = nullptr; // index all candidates
       RTree<LabelPosition *, double, 2, double> *candidates_sol = nullptr; // index active candidates
       RTree<LabelPosition *, double, 2, double> *candidates_subsol = nullptr; // idem for subparts
-
-      QList< LabelPosition * > mPositionsWithNoCandidates;
 
       //int *feat;        // [nblp]
       int *featStartId = nullptr; // [nbft]

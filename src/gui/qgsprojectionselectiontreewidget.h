@@ -228,8 +228,6 @@ class GUI_EXPORT QgsProjectionSelectionTreeWidget : public QWidget, private Ui::
 
     QString selectedProj4String();
 
-    QString selectedWktString();
-
     //! Gets the current QGIS projection identfier
     long selectedCrsId();
 

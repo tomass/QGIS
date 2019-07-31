@@ -19,7 +19,6 @@
 #include "qgslayoututils.h"
 #include "qgssymbollayerutils.h"
 #include "qgslayoutmodel.h"
-#include "qgsstyleentityvisitor.h"
 
 #include <QPainter>
 
@@ -149,18 +148,6 @@ QRectF QgsLayoutItemShape::boundingRect() const
 double QgsLayoutItemShape::estimatedFrameBleed() const
 {
   return mMaxSymbolBleed;
-}
-
-bool QgsLayoutItemShape::accept( QgsStyleEntityVisitorInterface *visitor ) const
-{
-  if ( mShapeStyleSymbol )
-  {
-    QgsStyleSymbolEntity entity( mShapeStyleSymbol.get() );
-    if ( !visitor->visit( QgsStyleEntityVisitorInterface::StyleLeaf( &entity, uuid(), displayName() ) ) )
-      return false;
-  }
-
-  return true;
 }
 
 void QgsLayoutItemShape::draw( QgsLayoutItemRenderContext &context )

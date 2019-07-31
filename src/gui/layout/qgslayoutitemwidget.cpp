@@ -22,9 +22,7 @@
 #include "qgslayoutatlas.h"
 #include "qgsexpressioncontextutils.h"
 #include "qgslayoutframe.h"
-#include "qgssymbolbutton.h"
-#include "qgsfontbutton.h"
-#include "qgslayoutdesignerinterface.h"
+
 #include <QButtonGroup>
 
 //
@@ -184,18 +182,9 @@ void QgsLayoutItemBaseWidget::setReportTypeString( const QString & )
 {
 }
 
-void QgsLayoutItemBaseWidget::setDesignerInterface( QgsLayoutDesignerInterface *iface )
+void QgsLayoutItemBaseWidget::setDesignerInterface( QgsLayoutDesignerInterface * )
 {
-  const auto symbolButtonWidgets = findChildren<QgsSymbolButton *>();
-  for ( QgsSymbolButton *symbolWidget : symbolButtonWidgets )
-  {
-    symbolWidget->setMessageBar( iface->messageBar() );
-  }
-  const auto fontButtonWidgets = findChildren<QgsFontButton *>();
-  for ( QgsFontButton *fontButton : fontButtonWidgets )
-  {
-    fontButton->setMessageBar( iface->messageBar() );
-  }
+
 }
 
 void QgsLayoutItemBaseWidget::registerDataDefinedButton( QgsPropertyOverrideButton *button, QgsLayoutObject::DataDefinedProperty property )

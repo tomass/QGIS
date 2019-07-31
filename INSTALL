@@ -4,7 +4,7 @@ Friday June 21, 2019
 
 
 Last Updated: Friday June 21, 2019
-Last Change : Friday June 21, 2019
+Last Change : Friday May 31, 2019
 
 
   1. Introduction
@@ -169,8 +169,8 @@ of Ubuntu. This is not activated by default, so you need to activate it:
 1. Edit your /etc/apt/sources.list file.
 2. Uncomment all the lines starting with "deb"
 
-Also you will need a recent enough distribution in order for all dependencies
-to be met. The supported distributions are listed in the following section.
+Also you will need to be running Ubuntu 'precise' or higher in order for
+all dependencies to be met.
 
 Now update your local sources database:
 
@@ -357,7 +357,7 @@ using dpkg -r libqgis1-dev.  Otherwise dpkg-buildpackage will complain about a
 build conflict.
 
 /!\ Note: By default tests are run in the process of building and their
-results are uploaded to http://cdash.orfeo-toolbox.org/index.php?project=QGIS.
+results are uploaded to http://dash.orfeo-toolbox.org/index.php?project=QGIS.
 You can turn the tests off using DEB_BUILD_OPTIONS=nocheck in front of the
 build command. The upload of results can be avoided with DEB_TEST_TARGET=test.
 
@@ -461,7 +461,7 @@ For the QGIS build you need to install following packages from cygwin:
 
 and from OSGeo4W (select Advanced Installation):
 
-- qgis-dev-deps
+- qgis-rel-deps
 
 This will also select packages the above packages depend on.
 
@@ -526,7 +526,7 @@ Running QGIS from within MSVC:
   Edit the properties of the project ALL_BUILD:
   Debugging -> Command -> D:\OSGeo4W64\QGIS\ms-windows\osgeo4w\build-qgis-test-x86_64\output\bin\RelWithDebInfo\qgis.exe
   Run.
-  Ignore the "These projects are out of date" message, it appears even if no files were changed.
+  Ignore the "These projects are out of date" message, it appeares even if no files were was changed.
 
 Old alternative method that might still work using cmake-gui:
   Create a 'build' directory somewhere. This will be where all the build output
@@ -2197,7 +2197,7 @@ Then run all tests from build directory:
   cd build
   make test
 
-To run all tests and report to http://cdash.orfeo-toolbox.org/index.php?project=QGIS
+To run all tests and report to http://dash.orfeo-toolbox.org/index.php?project=QGIS
 
   cd build
   make Experimental

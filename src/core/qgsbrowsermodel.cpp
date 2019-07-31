@@ -206,10 +206,8 @@ Qt::ItemFlags QgsBrowserModel::flags( const QModelIndex &index ) const
   if ( ptr->hasDragEnabled() )
     flags |= Qt::ItemIsDragEnabled;
 
-  Q_NOWARN_DEPRECATED_PUSH
   if ( ptr->acceptDrop() )
     flags |= Qt::ItemIsDropEnabled;
-  Q_NOWARN_DEPRECATED_POP
 
   if ( ptr->capabilities2() & QgsDataItem::Rename )
     flags |= Qt::ItemIsEditable;
@@ -282,9 +280,7 @@ bool QgsBrowserModel::setData( const QModelIndex &index, const QVariant &value, 
   {
     case Qt::EditRole:
     {
-      Q_NOWARN_DEPRECATED_PUSH
       return item->rename( value.toString() );
-      Q_NOWARN_DEPRECATED_POP
     }
   }
   return false;
@@ -596,8 +592,11 @@ QMimeData *QgsBrowserModel::mimeData( const QModelIndexList &indexes ) const
   return QgsMimeDataUtils::encodeUriList( lst );
 }
 
-bool QgsBrowserModel::dropMimeData( const QMimeData *data, Qt::DropAction action, int, int, const QModelIndex &parent )
+bool QgsBrowserModel::dropMimeData( const QMimeData *data, Qt::DropAction action, int row, int column, const QModelIndex &parent )
 {
+  Q_UNUSED( row )
+  Q_UNUSED( column )
+
   QgsDataItem *destItem = dataItem( parent );
   if ( !destItem )
   {
@@ -605,9 +604,7 @@ bool QgsBrowserModel::dropMimeData( const QMimeData *data, Qt::DropAction action
     return false;
   }
 
-  Q_NOWARN_DEPRECATED_PUSH
   return destItem->handleDrop( data, action );
-  Q_NOWARN_DEPRECATED_POP
 }
 
 QgsDataItem *QgsBrowserModel::dataItem( const QModelIndex &idx ) const

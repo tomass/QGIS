@@ -35,6 +35,8 @@ vector layer properties dialog
 :param fl: dialog flags
 %End
 
+    ~QgsQueryBuilder();
+
     virtual void showEvent( QShowEvent *event );
 
 

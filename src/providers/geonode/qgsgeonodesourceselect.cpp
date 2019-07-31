@@ -77,11 +77,6 @@ QgsGeoNodeSourceSelect::~QgsGeoNodeSourceSelect()
   emit abortRequests();
 }
 
-void QgsGeoNodeSourceSelect::reset()
-{
-  treeView->clearSelection();
-}
-
 void QgsGeoNodeSourceSelect::addConnectionsEntryList()
 {
   QgsGeoNodeNewConnection nc( this );
@@ -474,4 +469,14 @@ void QgsGeoNodeSourceSelect::updateButtonStateForAvailableConnections()
 QgsGeoNodeConnection QgsGeoNodeSourceSelect::currentConnection() const
 {
   return QgsGeoNodeConnection( cmbConnections->currentText() );
+}
+
+QGISEXTERN QList<QgsSourceSelectProvider *> *sourceSelectProviders()
+{
+  QList<QgsSourceSelectProvider *> *providers = new QList<QgsSourceSelectProvider *>();
+
+  *providers
+      << new QgsGeoNodeSourceSelectProvider;
+
+  return providers;
 }

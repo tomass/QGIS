@@ -42,7 +42,7 @@ class CORE_EXPORT QgsMimeDataUtils
       //! Constructs invalid URI
       Uri() = default;
       //! Constructs URI from encoded data
-      explicit Uri( const QString &encData );
+      explicit Uri( QString &encData );
 
       /**
        * Constructs a URI corresponding to the specified \a layer.

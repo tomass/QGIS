@@ -26,7 +26,6 @@
 #include "qgsattributeform.h"
 #include "qgsattributes.h"
 #include "qgsjsonutils.h"
-#include "qgspostgresstringutils.h"
 
 #include <QHeaderView>
 #include <QComboBox>
@@ -77,7 +76,7 @@ QVariant QgsValueRelationWidgetWrapper::value() const
     }
 
     QVariantList vl;
-    //store as QVariantList because the field type supports data structure
+    //store as QVariantList because it's json
     for ( const QString &s : qgis::as_const( selection ) )
     {
       // Convert to proper type
@@ -95,17 +94,7 @@ QVariant QgsValueRelationWidgetWrapper::value() const
           break;
       }
     }
-
-    if ( layer()->fields().at( fieldIdx() ).type() == QVariant::Map ||
-         layer()->fields().at( fieldIdx() ).type() == QVariant::List )
-    {
-      v = vl;
-    }
-    else
-    {
-      //make string
-      v = QgsPostgresStringUtils::buildArray( vl );
-    }
+    v = vl;
   }
 
   if ( mLineEdit )
@@ -187,9 +176,9 @@ void QgsValueRelationWidgetWrapper::setValue( const QVariant &value )
   {
     QStringList checkList;
 
-    if ( layer()->fields().at( fieldIdx() ).type() == QVariant::Map ||
-         layer()->fields().at( fieldIdx() ).type() == QVariant::List )
+    if ( layer()->fields().at( fieldIdx() ).type() == QVariant::Map )
     {
+      //because of json it's stored as QVariantList
       checkList = value.toStringList();
     }
     else

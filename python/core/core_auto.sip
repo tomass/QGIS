@@ -10,7 +10,6 @@
 %Include auto_generated/qgsactionscope.sip
 %Include auto_generated/qgsactionmanager.sip
 %Include auto_generated/qgsaggregatecalculator.sip
-%Include auto_generated/qgspostgresstringutils.sip
 %Include auto_generated/qgsattributes.sip
 %Include auto_generated/qgsattributetableconfig.sip
 %Include auto_generated/qgsattributeeditorelement.sip
@@ -153,8 +152,6 @@
 %Include auto_generated/auth/qgsauthconfig.sip
 %Include auto_generated/auth/qgsauthmanager.sip
 %Include auto_generated/auth/qgsauthmethod.sip
-%Include auto_generated/callouts/qgscallout.sip
-%Include auto_generated/callouts/qgscalloutsregistry.sip
 %Include auto_generated/diagram/qgsdiagram.sip
 %Include auto_generated/diagram/qgspiediagram.sip
 %Include auto_generated/diagram/qgstextdiagram.sip
@@ -271,7 +268,6 @@
 %Include auto_generated/symbology/qgsheatmaprenderer.sip
 %Include auto_generated/symbology/qgsinvertedpolygonrenderer.sip
 %Include auto_generated/symbology/qgsnullsymbolrenderer.sip
-%Include auto_generated/symbology/qgsstyleentityvisitor.sip
 %Include auto_generated/symbology/qgssymbollayer.sip
 %Include auto_generated/symbology/qgssymbollayerregistry.sip
 %Include auto_generated/symbology/qgssymbollayerutils.sip
@@ -367,8 +363,6 @@
 %Include auto_generated/qgsnetworkcontentfetcher.sip
 %Include auto_generated/qgsnetworkcontentfetcherregistry.sip
 %Include auto_generated/qgsnetworkcontentfetchertask.sip
-%Include auto_generated/qgsnewsfeedmodel.sip
-%Include auto_generated/qgsnewsfeedparser.sip
 %Include auto_generated/qgsofflineediting.sip
 %Include auto_generated/qgspluginlayer.sip
 %Include auto_generated/qgspointxy.sip

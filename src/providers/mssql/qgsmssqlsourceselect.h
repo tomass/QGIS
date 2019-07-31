@@ -79,8 +79,6 @@ class QgsMssqlSourceSelect : public QgsAbstractDataSourceWidget, private Ui::Qgs
     //! Connection info (database, host, user, password)
     QString connectionInfo();
 
-    void reset() override;
-
   signals:
     void addGeometryColumn( const QgsMssqlLayerProperty & );
 

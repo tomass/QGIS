@@ -19,8 +19,6 @@
 #include "qgsvectorlayer.h"
 #include "qgsvectordataprovider.h"
 #include "qgsapplication.h"
-#include "qgshelp.h"
-#include "qgsgui.h"
 
 #include <QListView>
 #include <QMessageBox>
@@ -36,7 +34,6 @@ QgsQueryBuilder::QgsQueryBuilder( QgsVectorLayer *layer,
   , mLayer( layer )
 {
   setupUi( this );
-  QgsGui::instance()->enableAutoGeometryRestore( this );
   connect( btnEqual, &QPushButton::clicked, this, &QgsQueryBuilder::btnEqual_clicked );
   connect( btnLessThan, &QPushButton::clicked, this, &QgsQueryBuilder::btnLessThan_clicked );
   connect( btnGreaterThan, &QPushButton::clicked, this, &QgsQueryBuilder::btnGreaterThan_clicked );
@@ -57,6 +54,9 @@ QgsQueryBuilder::QgsQueryBuilder( QgsVectorLayer *layer,
   connect( btnGetAllValues, &QPushButton::clicked, this, &QgsQueryBuilder::btnGetAllValues_clicked );
   connect( btnSampleValues, &QPushButton::clicked, this, &QgsQueryBuilder::btnSampleValues_clicked );
   connect( buttonBox, &QDialogButtonBox::helpRequested, this, &QgsQueryBuilder::showHelp );
+
+  QgsSettings settings;
+  restoreGeometry( settings.value( QStringLiteral( "Windows/QueryBuilder/geometry" ) ).toByteArray() );
 
   QPushButton *pbn = new QPushButton( tr( "&Test" ) );
   buttonBox->addButton( pbn, QDialogButtonBox::ActionRole );
@@ -80,6 +80,12 @@ QgsQueryBuilder::QgsQueryBuilder( QgsVectorLayer *layer,
   connect( mFilterLineEdit, &QgsFilterLineEdit::textChanged, this, &QgsQueryBuilder::onTextChanged );
 
   populateFields();
+}
+
+QgsQueryBuilder::~QgsQueryBuilder()
+{
+  QgsSettings settings;
+  settings.setValue( QStringLiteral( "Windows/QueryBuilder/geometry" ), saveGeometry() );
 }
 
 void QgsQueryBuilder::showEvent( QShowEvent *event )

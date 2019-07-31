@@ -31,7 +31,11 @@
 #include "qgsnetworkreplyparser.h"
 #include "qgsmessagelog.h"
 #include "qgsexception.h"
-#include "qgswcsdataitems.h"
+
+#ifdef HAVE_GUI
+#include "qgswcssourceselect.h"
+#include "qgssourceselectprovider.h"
+#endif
 
 #include <QNetworkRequest>
 #include <QNetworkReply>
@@ -54,8 +58,8 @@
 #define SRVERR(message) QGS_ERROR_MESSAGE(message,"WCS server")
 #define QGS_ERROR(message) QgsError(message,"WCS provider")
 
-QString QgsWcsProvider::WCS_KEY = QStringLiteral( "wcs" );
-QString QgsWcsProvider::WCS_DESCRIPTION = QStringLiteral( "OGC Web Coverage Service version 1.0/1.1 data provider" );
+static QString WCS_KEY = QStringLiteral( "wcs" );
+static QString WCS_DESCRIPTION = QStringLiteral( "OGC Web Coverage Service version 1.0/1.1 data provider" );
 
 static QString DEFAULT_LATLON_CRS = QStringLiteral( "CRS:84" );
 
@@ -1637,10 +1641,26 @@ QMap<QString, QString> QgsWcsProvider::supportedMimes()
   return mimes;
 }
 
-QgsWcsProvider *QgsWcsProviderMetadata::createProvider( const QString &uri, const QgsDataProvider::ProviderOptions &options )
+QGISEXTERN QgsWcsProvider *classFactory( const QString *uri, const QgsDataProvider::ProviderOptions &options )
 {
-  return new QgsWcsProvider( uri, options );
+  return new QgsWcsProvider( *uri, options );
 }
+
+QGISEXTERN QString providerKey()
+{
+  return WCS_KEY;
+}
+
+QGISEXTERN QString description()
+{
+  return WCS_DESCRIPTION;
+}
+
+QGISEXTERN bool isProvider()
+{
+  return true;
+}
+
 
 // ----------
 
@@ -1951,18 +1971,31 @@ void QgsWcsDownloadHandler::canceled()
   }
 }
 
+#ifdef HAVE_GUI
 
-QList< QgsDataItemProvider * > QgsWcsProviderMetadata::dataItemProviders() const
+//! Provider for WCS layers source select
+class QgsWcsSourceSelectProvider : public QgsSourceSelectProvider
 {
-  QList<QgsDataItemProvider *> providers;
-  providers << new QgsWcsDataItemProvider;
+  public:
+
+    QString providerKey() const override { return QStringLiteral( "wcs" ); }
+    QString text() const override { return QObject::tr( "WCS" ); }
+    int ordering() const override { return QgsSourceSelectProvider::OrderRemoteProvider + 20; }
+    QIcon icon() const override { return QgsApplication::getThemeIcon( QStringLiteral( "/mActionAddWcsLayer.svg" ) ); }
+    QgsAbstractDataSourceWidget *createDataSourceWidget( QWidget *parent = nullptr, Qt::WindowFlags fl = Qt::Widget, QgsProviderRegistry::WidgetMode widgetMode = QgsProviderRegistry::WidgetMode::Embedded ) const override
+    {
+      return new QgsWCSSourceSelect( parent, fl, widgetMode );
+    }
+};
+
+
+QGISEXTERN QList<QgsSourceSelectProvider *> *sourceSelectProviders()
+{
+  QList<QgsSourceSelectProvider *> *providers = new QList<QgsSourceSelectProvider *>();
+
+  *providers
+      << new QgsWcsSourceSelectProvider;
+
   return providers;
 }
-
-QgsWcsProviderMetadata::QgsWcsProviderMetadata():
-  QgsProviderMetadata( QgsWcsProvider::WCS_KEY, QgsWcsProvider::WCS_DESCRIPTION ) {}
-
-QGISEXTERN QgsProviderMetadata *providerMetadataFactory()
-{
-  return new QgsWcsProviderMetadata();
-}
+#endif

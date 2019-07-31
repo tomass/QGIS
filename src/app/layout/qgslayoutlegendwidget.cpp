@@ -38,7 +38,6 @@
 #include "qgslayoutitemlegend.h"
 #include "qgslayoutmeasurementconverter.h"
 #include "qgsunittypes.h"
-#include "qgsexpressionbuilderdialog.h"
 
 #include <QMessageBox>
 #include <QInputDialog>
@@ -84,9 +83,7 @@ QgsLayoutLegendWidget::QgsLayoutLegendWidget( QgsLayoutItemLegend *legend )
   connect( mWmsLegendHeightSpinBox, static_cast < void ( QDoubleSpinBox::* )( double ) > ( &QDoubleSpinBox::valueChanged ), this, &QgsLayoutLegendWidget::mWmsLegendHeightSpinBox_valueChanged );
   connect( mTitleSpaceBottomSpinBox, static_cast < void ( QDoubleSpinBox::* )( double ) > ( &QDoubleSpinBox::valueChanged ), this, &QgsLayoutLegendWidget::mTitleSpaceBottomSpinBox_valueChanged );
   connect( mGroupSpaceSpinBox, static_cast < void ( QDoubleSpinBox::* )( double ) > ( &QDoubleSpinBox::valueChanged ), this, &QgsLayoutLegendWidget::mGroupSpaceSpinBox_valueChanged );
-  connect( mSpaceBelowGroupHeadingSpinBox, static_cast < void ( QDoubleSpinBox::* )( double ) > ( &QDoubleSpinBox::valueChanged ), this, &QgsLayoutLegendWidget::spaceBelowGroupHeadingChanged );
   connect( mLayerSpaceSpinBox, static_cast < void ( QDoubleSpinBox::* )( double ) > ( &QDoubleSpinBox::valueChanged ), this, &QgsLayoutLegendWidget::mLayerSpaceSpinBox_valueChanged );
-  connect( mSpaceBelowSubgroupHeadingSpinBox, static_cast < void ( QDoubleSpinBox::* )( double ) > ( &QDoubleSpinBox::valueChanged ), this, &QgsLayoutLegendWidget::spaceBelowSubGroupHeadingChanged );
   connect( mSymbolSpaceSpinBox, static_cast < void ( QDoubleSpinBox::* )( double ) > ( &QDoubleSpinBox::valueChanged ), this, &QgsLayoutLegendWidget::mSymbolSpaceSpinBox_valueChanged );
   connect( mIconLabelSpaceSpinBox, static_cast < void ( QDoubleSpinBox::* )( double ) > ( &QDoubleSpinBox::valueChanged ), this, &QgsLayoutLegendWidget::mIconLabelSpaceSpinBox_valueChanged );
   connect( mFontColorButton, &QgsColorButton::colorChanged, this, &QgsLayoutLegendWidget::mFontColorButton_colorChanged );
@@ -105,7 +102,6 @@ QgsLayoutLegendWidget::QgsLayoutLegendWidget( QgsLayoutItemLegend *legend )
   connect( mEditPushButton, &QToolButton::clicked, this, &QgsLayoutLegendWidget::mEditPushButton_clicked );
   connect( mCountToolButton, &QToolButton::clicked, this, &QgsLayoutLegendWidget::mCountToolButton_clicked );
   connect( mExpressionFilterButton, &QgsLegendFilterButton::toggled, this, &QgsLayoutLegendWidget::mExpressionFilterButton_toggled );
-  connect( mLayerExpressionButton, &QToolButton::clicked, this, &QgsLayoutLegendWidget::mLayerExpressionButton_clicked );
   connect( mFilterByMapToolButton, &QToolButton::toggled, this, &QgsLayoutLegendWidget::mFilterByMapToolButton_toggled );
   connect( mUpdateAllPushButton, &QToolButton::clicked, this, &QgsLayoutLegendWidget::mUpdateAllPushButton_clicked );
   connect( mAddGroupToolButton, &QToolButton::clicked, this, &QgsLayoutLegendWidget::mAddGroupToolButton_clicked );
@@ -128,9 +124,6 @@ QgsLayoutLegendWidget::QgsLayoutLegendWidget( QgsLayoutItemLegend *legend )
   mArrangementCombo->customizeAlignmentDisplay( Qt::AlignLeft, tr( "Symbols on Left" ), QgsApplication::getThemeIcon( QStringLiteral( "/mIconArrangeSymbolsLeft.svg" ) ) );
   mArrangementCombo->customizeAlignmentDisplay( Qt::AlignRight, tr( "Symbols on Right" ), QgsApplication::getThemeIcon( QStringLiteral( "/mIconArrangeSymbolsRight.svg" ) ) );
 
-  mSpaceBelowGroupHeadingSpinBox->setClearValue( 0 );
-  mSpaceBelowSubgroupHeadingSpinBox->setClearValue( 0 );
-
   // setup icons
   mAddToolButton->setIcon( QIcon( QgsApplication::iconPath( "symbologyAdd.svg" ) ) );
   mEditPushButton->setIcon( QIcon( QgsApplication::iconPath( "symbologyEdit.svg" ) ) );
@@ -138,7 +131,6 @@ QgsLayoutLegendWidget::QgsLayoutLegendWidget( QgsLayoutItemLegend *legend )
   mMoveUpToolButton->setIcon( QIcon( QgsApplication::iconPath( "mActionArrowUp.svg" ) ) );
   mMoveDownToolButton->setIcon( QIcon( QgsApplication::iconPath( "mActionArrowDown.svg" ) ) );
   mCountToolButton->setIcon( QIcon( QgsApplication::iconPath( "mActionSum.svg" ) ) );
-  mLayerExpressionButton->setIcon( QIcon( QgsApplication::iconPath( "mActionAddExpression.svg" ) ) );
 
   mFontColorButton->setColorDialogTitle( tr( "Select Font Color" ) );
   mFontColorButton->setContext( QStringLiteral( "composer" ) );
@@ -206,9 +198,7 @@ void QgsLayoutLegendWidget::setGuiElements()
   mWmsLegendHeightSpinBox->setValue( mLegend->wmsLegendHeight() );
   mTitleSpaceBottomSpinBox->setValue( mLegend->style( QgsLegendStyle::Title ).margin( QgsLegendStyle::Bottom ) );
   mGroupSpaceSpinBox->setValue( mLegend->style( QgsLegendStyle::Group ).margin( QgsLegendStyle::Top ) );
-  mSpaceBelowGroupHeadingSpinBox->setValue( mLegend->style( QgsLegendStyle::Group ).margin( QgsLegendStyle::Bottom ) );
   mLayerSpaceSpinBox->setValue( mLegend->style( QgsLegendStyle::Subgroup ).margin( QgsLegendStyle::Top ) );
-  mSpaceBelowSubgroupHeadingSpinBox->setValue( mLegend->style( QgsLegendStyle::Subgroup ).margin( QgsLegendStyle::Bottom ) );
   // We keep Symbol and SymbolLabel Top in sync for now
   mSymbolSpaceSpinBox->setValue( mLegend->style( QgsLegendStyle::Symbol ).margin( QgsLegendStyle::Top ) );
   mIconLabelSpaceSpinBox->setValue( mLegend->style( QgsLegendStyle::SymbolLabel ).margin( QgsLegendStyle::Left ) );
@@ -432,23 +422,11 @@ void QgsLayoutLegendWidget::mGroupSpaceSpinBox_valueChanged( double d )
   }
 }
 
-void QgsLayoutLegendWidget::spaceBelowGroupHeadingChanged( double space )
-{
-  if ( mLegend )
-  {
-    mLegend->beginCommand( tr( "Change Group Space" ), QgsLayoutItem::UndoLegendGroupSpace );
-    mLegend->rstyle( QgsLegendStyle::Group ).setMargin( QgsLegendStyle::Bottom, space );
-    mLegend->adjustBoxSize();
-    mLegend->update();
-    mLegend->endCommand();
-  }
-}
-
 void QgsLayoutLegendWidget::mLayerSpaceSpinBox_valueChanged( double d )
 {
   if ( mLegend )
   {
-    mLegend->beginCommand( tr( "Change Subgroup Space" ), QgsLayoutItem::UndoLegendLayerSpace );
+    mLegend->beginCommand( tr( "Change Layer Space" ), QgsLayoutItem::UndoLegendLayerSpace );
     mLegend->rstyle( QgsLegendStyle::Subgroup ).setMargin( QgsLegendStyle::Top, d );
     mLegend->adjustBoxSize();
     mLegend->update();
@@ -524,18 +502,6 @@ void QgsLayoutLegendWidget::itemFontChanged()
   {
     mLegend->beginCommand( tr( "Change Item Font" ), QgsLayoutItem::UndoLegendItemFont );
     mLegend->setStyleFont( QgsLegendStyle::SymbolLabel, mItemFontButton->currentFont() );
-    mLegend->adjustBoxSize();
-    mLegend->update();
-    mLegend->endCommand();
-  }
-}
-
-void QgsLayoutLegendWidget::spaceBelowSubGroupHeadingChanged( double space )
-{
-  if ( mLegend )
-  {
-    mLegend->beginCommand( tr( "Change Subgroup Space" ), QgsLayoutItem::UndoLegendLayerSpace );
-    mLegend->rstyle( QgsLegendStyle::Subgroup ).setMargin( QgsLegendStyle::Bottom, space );
     mLegend->adjustBoxSize();
     mLegend->update();
     mLegend->endCommand();
@@ -997,45 +963,6 @@ void QgsLayoutLegendWidget::mExpressionFilterButton_toggled( bool checked )
   mLegend->endCommand();
 }
 
-void QgsLayoutLegendWidget::mLayerExpressionButton_clicked()
-{
-
-  if ( !mLegend )
-  {
-    return;
-  }
-
-  QModelIndex currentIndex = mItemTreeView->currentIndex();
-  if ( !currentIndex.isValid() )
-    return;
-
-  QgsLayerTreeNode *currentNode = mItemTreeView->currentNode();
-  if ( !QgsLayerTree::isLayer( currentNode ) )
-    return;
-
-  QgsLayerTreeLayer *layerNode = qobject_cast<QgsLayerTreeLayer *>( currentNode );
-  QgsVectorLayer *vl = qobject_cast<QgsVectorLayer *>( layerNode->layer() );
-
-  if ( !vl )
-    return;
-
-  QString currentExpression;
-  if ( layerNode->labelExpression().isEmpty() )
-    currentExpression = QStringLiteral( "@symbol_label" );
-  else
-    currentExpression = layerNode->labelExpression();
-  QgsExpressionContext legendContext = mLegend->createExpressionContext();
-  legendContext.appendScope( vl->createExpressionContextScope() );
-  QgsExpressionBuilderDialog expressiondialog( vl, currentExpression, nullptr, "generic", legendContext );
-  if ( expressiondialog.exec() )
-    layerNode->setLabelExpression( expressiondialog.expressionText() );
-
-  mLegend->beginCommand( tr( "Update Legend" ) );
-  mLegend->updateLegend();
-  mLegend->adjustBoxSize();
-  mLegend->endCommand();
-}
-
 void QgsLayoutLegendWidget::mUpdateAllPushButton_clicked()
 {
   updateLegend();
@@ -1147,26 +1074,11 @@ void QgsLayoutLegendWidget::selectedChanged( const QModelIndex &current, const Q
   Q_UNUSED( current )
   Q_UNUSED( previous )
 
-  mLayerExpressionButton->setEnabled( false );
-
   if ( mLegend && mLegend->autoUpdateModel() )
-  {
-    QgsLayerTreeNode *currentNode = mItemTreeView->currentNode();
-    if ( !QgsLayerTree::isLayer( currentNode ) )
-      return;
-
-    QgsLayerTreeLayer *currentLayerNode = QgsLayerTree::toLayer( currentNode );
-    QgsVectorLayer *vl = qobject_cast<QgsVectorLayer *>( currentLayerNode->layer() );
-    if ( !vl )
-      return;
-
-    mLayerExpressionButton->setEnabled( true );
     return;
-  }
 
   mCountToolButton->setChecked( false );
   mCountToolButton->setEnabled( false );
-
 
   mExpressionFilterButton->blockSignals( true );
   mExpressionFilterButton->setChecked( false );
@@ -1184,7 +1096,6 @@ void QgsLayoutLegendWidget::selectedChanged( const QModelIndex &current, const Q
 
   mCountToolButton->setChecked( currentNode->customProperty( QStringLiteral( "showFeatureCount" ), 0 ).toInt() );
   mCountToolButton->setEnabled( true );
-  mLayerExpressionButton->setEnabled( true );
 
   bool exprEnabled;
   QString expr = QgsLayerTreeUtils::legendFilterByExpression( *qobject_cast<QgsLayerTreeLayer *>( currentNode ), &exprEnabled );

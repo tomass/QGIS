@@ -48,7 +48,6 @@ class ClipRasterByExtent(GdalAlgorithm):
     NODATA = 'NODATA'
     OPTIONS = 'OPTIONS'
     DATA_TYPE = 'DATA_TYPE'
-    EXTRA = 'EXTRA'
     OUTPUT = 'OUTPUT'
 
     def __init__(self):
@@ -85,13 +84,6 @@ class ClipRasterByExtent(GdalAlgorithm):
                                                     defaultValue=0)
         dataType_param.setFlags(dataType_param.flags() | QgsProcessingParameterDefinition.FlagAdvanced)
         self.addParameter(dataType_param)
-
-        extra_param = QgsProcessingParameterString(self.EXTRA,
-                                                   self.tr('Additional command-line parameters'),
-                                                   defaultValue=None,
-                                                   optional=True)
-        extra_param.setFlags(extra_param.flags() | QgsProcessingParameterDefinition.FlagAdvanced)
-        self.addParameter(extra_param)
 
         self.addParameter(QgsProcessingParameterRasterDestination(self.OUTPUT,
                                                                   self.tr('Clipped (extent)')))
@@ -147,10 +139,6 @@ class ClipRasterByExtent(GdalAlgorithm):
 
         if options:
             arguments.extend(GdalUtils.parseCreationOptions(options))
-
-        if self.EXTRA in parameters and parameters[self.EXTRA] not in (None, ''):
-            extra = self.parameterAsString(parameters, self.EXTRA, context)
-            arguments.append(extra)
 
         arguments.append(inLayer.source())
         arguments.append(out)

@@ -14,7 +14,6 @@
  ***************************************************************************/
 #include "qgsrulebasedlabeling.h"
 #include "qgssymbollayerutils.h"
-#include "qgsstyleentityvisitor.h"
 
 QgsRuleBasedLabelProvider::QgsRuleBasedLabelProvider( const QgsRuleBasedLabeling &rules, QgsVectorLayer *layer, bool withFeatureLoop )
   : QgsVectorLayerLabelProvider( layer, QString(), withFeatureLoop, nullptr )
@@ -28,7 +27,7 @@ QgsVectorLayerLabelProvider *QgsRuleBasedLabelProvider::createProvider( QgsVecto
   return new QgsVectorLayerLabelProvider( layer, providerId, withFeatureLoop, settings );
 }
 
-bool QgsRuleBasedLabelProvider::prepare( QgsRenderContext &context, QSet<QString> &attributeNames )
+bool QgsRuleBasedLabelProvider::prepare( const QgsRenderContext &context, QSet<QString> &attributeNames )
 {
   for ( QgsVectorLayerLabelProvider *provider : qgis::as_const( mSubProviders ) )
     provider->setEngine( mEngine );
@@ -38,10 +37,10 @@ bool QgsRuleBasedLabelProvider::prepare( QgsRenderContext &context, QSet<QString
   return true;
 }
 
-void QgsRuleBasedLabelProvider::registerFeature( const QgsFeature &feature, QgsRenderContext &context, const QgsGeometry &obstacleGeometry, const QgsSymbol *symbol )
+void QgsRuleBasedLabelProvider::registerFeature( const QgsFeature &feature, QgsRenderContext &context, const QgsGeometry &obstacleGeometry )
 {
   // will register the feature to relevant sub-providers
-  mRules->rootRule()->registerFeature( feature, context, mSubProviders, obstacleGeometry, symbol );
+  mRules->rootRule()->registerFeature( feature, context, mSubProviders, obstacleGeometry );
 }
 
 QList<QgsAbstractLabelProvider *> QgsRuleBasedLabelProvider::subProviders()
@@ -131,34 +130,6 @@ bool QgsRuleBasedLabeling::Rule::requiresAdvancedEffects() const
   }
 
   return false;
-}
-
-bool QgsRuleBasedLabeling::Rule::accept( QgsStyleEntityVisitorInterface *visitor ) const
-{
-  // NOTE: if visitEnter returns false it means "don't visit the rule", not "abort all further visitations"
-  if ( mParent && !visitor->visitEnter( QgsStyleEntityVisitorInterface::Node( QgsStyleEntityVisitorInterface::NodeType::SymbolRule, mRuleKey, mDescription ) ) )
-    return true;
-
-  if ( mSettings )
-  {
-    QgsStyleLabelSettingsEntity entity( *mSettings );
-    if ( !visitor->visit( QgsStyleEntityVisitorInterface::StyleLeaf( &entity ) ) )
-      return false;
-  }
-
-  if ( !mChildren.empty() )
-  {
-    for ( const Rule *rule : mChildren )
-    {
-      if ( !rule->accept( visitor ) )
-        return false;
-    }
-  }
-
-  if ( mParent && !visitor->visitExit( QgsStyleEntityVisitorInterface::Node( QgsStyleEntityVisitorInterface::NodeType::SymbolRule, mRuleKey, mDescription ) ) )
-    return false;
-
-  return true;
 }
 
 void QgsRuleBasedLabeling::Rule::subProviderIds( QStringList &list ) const
@@ -320,7 +291,7 @@ void QgsRuleBasedLabeling::Rule::createSubProviders( QgsVectorLayer *layer, QgsR
   }
 }
 
-void QgsRuleBasedLabeling::Rule::prepare( QgsRenderContext &context, QSet<QString> &attributeNames, QgsRuleBasedLabeling::RuleToProviderMap &subProviders )
+void QgsRuleBasedLabeling::Rule::prepare( const QgsRenderContext &context, QSet<QString> &attributeNames, QgsRuleBasedLabeling::RuleToProviderMap &subProviders )
 {
   if ( mSettings )
   {
@@ -345,21 +316,18 @@ void QgsRuleBasedLabeling::Rule::prepare( QgsRenderContext &context, QSet<QStrin
   }
 }
 
-QgsRuleBasedLabeling::Rule::RegisterResult QgsRuleBasedLabeling::Rule::registerFeature( const QgsFeature &feature, QgsRenderContext &context, QgsRuleBasedLabeling::RuleToProviderMap &subProviders, const QgsGeometry &obstacleGeometry, const QgsSymbol *symbol )
+QgsRuleBasedLabeling::Rule::RegisterResult QgsRuleBasedLabeling::Rule::registerFeature( const QgsFeature &feature, QgsRenderContext &context, QgsRuleBasedLabeling::RuleToProviderMap &subProviders, const QgsGeometry &obstacleGeometry )
 {
   if ( !isFilterOK( feature, context )
        || !isScaleOK( context.rendererScale() ) )
-  {
-    delete symbol;
     return Filtered;
-  }
 
   bool registered = false;
 
   // do we have active subprovider for the rule?
   if ( subProviders.contains( this ) && mIsActive )
   {
-    subProviders[this]->registerFeature( feature, context, obstacleGeometry, symbol );
+    subProviders[this]->registerFeature( feature, context, obstacleGeometry );
     registered = true;
   }
 
@@ -383,7 +351,7 @@ QgsRuleBasedLabeling::Rule::RegisterResult QgsRuleBasedLabeling::Rule::registerF
   {
     for ( Rule *rule : qgis::as_const( mElseRules ) )
     {
-      registered |= rule->registerFeature( feature, context, subProviders, obstacleGeometry, symbol ) != Filtered;
+      registered |= rule->registerFeature( feature, context, subProviders, obstacleGeometry ) != Filtered;
     }
   }
 
@@ -504,11 +472,6 @@ QgsPalLayerSettings QgsRuleBasedLabeling::settings( const QString &providerId ) 
     return *rule->settings();
 
   return QgsPalLayerSettings();
-}
-
-bool QgsRuleBasedLabeling::accept( QgsStyleEntityVisitorInterface *visitor ) const
-{
-  return mRootRule->accept( visitor );
 }
 
 bool QgsRuleBasedLabeling::requiresAdvancedEffects() const

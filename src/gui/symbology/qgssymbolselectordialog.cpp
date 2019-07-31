@@ -38,7 +38,6 @@
 #include "qgsimagecache.h"
 #include "qgsproject.h"
 #include "qgsguiutils.h"
-#include "qgsgui.h"
 
 #include <QColorDialog>
 #include <QPainter>
@@ -769,7 +768,8 @@ QgsSymbolSelectorDialog::QgsSymbolSelectorDialog( QgsSymbol *symbol, QgsStyle *s
   layout()->addWidget( mSelectorWidget );
   layout()->addWidget( mButtonBox );
 
-  QgsGui::instance()->enableAutoGeometryRestore( this );
+  QgsSettings settings;
+  restoreGeometry( settings.value( QStringLiteral( "Windows/SymbolSelectorWidget/geometry" ) ).toByteArray() );
 
   // can be embedded in renderer properties dialog
   if ( embedded )
@@ -782,6 +782,12 @@ QgsSymbolSelectorDialog::QgsSymbolSelectorDialog( QgsSymbol *symbol, QgsStyle *s
     setWindowTitle( tr( "Symbol Selector" ) );
   }
   mSelectorWidget->setDockMode( embedded );
+}
+
+QgsSymbolSelectorDialog::~QgsSymbolSelectorDialog()
+{
+  QgsSettings settings;
+  settings.setValue( QStringLiteral( "Windows/SymbolSelectorWidget/geometry" ), saveGeometry() );
 }
 
 QMenu *QgsSymbolSelectorDialog::advancedMenu()
@@ -910,11 +916,6 @@ void QgsSymbolSelectorDialog::symbolChanged()
 void QgsSymbolSelectorDialog::changeLayer( QgsSymbolLayer *layer )
 {
   mSelectorWidget->changeLayer( layer );
-}
-
-QDialogButtonBox *QgsSymbolSelectorDialog::buttonBox() const
-{
-  return mButtonBox;
 }
 
 void QgsSymbolSelectorDialog::showHelp()

@@ -264,6 +264,8 @@ class GUI_EXPORT QgsRendererRulePropsDialog : public QDialog
      */
     QgsRendererRulePropsDialog( QgsRuleBasedRenderer::Rule *rule, QgsVectorLayer *layer, QgsStyle *style, QWidget *parent SIP_TRANSFERTHIS = nullptr, const QgsSymbolWidgetContext &context = QgsSymbolWidgetContext() );
 
+    ~QgsRendererRulePropsDialog() override;
+
     QgsRuleBasedRenderer::Rule *rule() { return mPropsWidget->rule(); }
 
   public slots:

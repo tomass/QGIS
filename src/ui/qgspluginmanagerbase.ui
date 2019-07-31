@@ -368,7 +368,7 @@
                     </property>
                     <property name="url" stdset="0">
                      <url>
-                      <string notr="true">about:blank</string>
+                      <string>about:blank</string>
                      </url>
                     </property>
                    </widget>

@@ -806,7 +806,6 @@ class CORE_EXPORT QgsLayoutItemMapGrid : public QgsLayoutItemMapItem
     QColor frameFillColor2() const { return mGridFrameFillColor2; }
 
     QgsExpressionContext createExpressionContext() const override;
-    bool accept( QgsStyleEntityVisitorInterface *visitor ) const override;
 
   private:
 

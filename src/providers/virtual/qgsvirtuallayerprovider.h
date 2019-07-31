@@ -23,11 +23,6 @@ email                : hugo dot mercier at oslandia dot com
 #include "qgsvirtuallayerdefinition.h"
 #include "qgsvirtuallayersqlitehelper.h"
 
-#include "qgsprovidermetadata.h"
-#ifdef HAVE_GUI
-#include "qgsproviderguimetadata.h"
-#endif
-
 class QgsVirtualLayerFeatureIterator;
 
 class QgsVirtualLayerProvider: public QgsVectorDataProvider
@@ -124,22 +119,6 @@ class QgsVirtualLayerProvider: public QgsVectorDataProvider
     void invalidateStatistics();
 
 };
-
-class QgsVirtualLayerProviderMetadata: public QgsProviderMetadata
-{
-  public:
-    QgsVirtualLayerProviderMetadata();
-    QgsVirtualLayerProvider *createProvider( const QString &uri, const QgsDataProvider::ProviderOptions &options ) override;
-};
-
-#ifdef HAVE_GUI
-class QgsVirtualLayerProviderGuiMetadata: public QgsProviderGuiMetadata
-{
-  public:
-    QgsVirtualLayerProviderGuiMetadata();
-    QList<QgsSourceSelectProvider *> sourceSelectProviders() override;
-};
-#endif
 
 // clazy:excludeall=qstring-allocations
 

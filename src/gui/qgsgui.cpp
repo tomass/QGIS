@@ -44,11 +44,6 @@
 #include "qgswindowmanagerinterface.h"
 #include "qgssettings.h"
 #include "qgsdataitemguiproviderregistry.h"
-#include "qgsgdalguiprovider.h"
-#include "qgsogrguiprovider.h"
-#include "qgsproviderregistry.h"
-#include "qgsproviderguiregistry.h"
-#include "qgsprojectstorageguiregistry.h"
 
 QgsGui *QgsGui::instance()
 {
@@ -106,16 +101,6 @@ QgsDataItemGuiProviderRegistry *QgsGui::dataItemGuiProviderRegistry()
   return instance()->mDataItemGuiProviderRegistry;
 }
 
-QgsProjectStorageGuiRegistry *QgsGui::projectStorageGuiRegistry()
-{
-  return instance()->mProjectStorageGuiRegistry;
-}
-
-QgsProviderGuiRegistry *QgsGui::providerGuiRegistry()
-{
-  return instance()->mProviderGuiRegistry;
-}
-
 void QgsGui::enableAutoGeometryRestore( QWidget *widget, const QString &key )
 {
   if ( widget->objectName().isEmpty() )
@@ -161,8 +146,6 @@ QgsGui::~QgsGui()
   delete mShortcutsManager;
   delete mNative;
   delete mWidgetStateHelper;
-  delete mProjectStorageGuiRegistry;
-  delete mProviderGuiRegistry;
 }
 
 QgsGui::QgsGui()
@@ -183,24 +166,14 @@ QgsGui::QgsGui()
   mNative = new QgsNative();
 #endif
 
-  // provider gui registry initialize QgsProviderRegistry too
-  mProviderGuiRegistry = new QgsProviderGuiRegistry( QgsApplication::pluginPath() );
-  mProjectStorageGuiRegistry = new QgsProjectStorageGuiRegistry();
-  mDataItemGuiProviderRegistry = new QgsDataItemGuiProviderRegistry();
-  mSourceSelectProviderRegistry = new QgsSourceSelectProviderRegistry();
-
-  mProjectStorageGuiRegistry->initializeFromProviderGuiRegistry( mProviderGuiRegistry );
-  mDataItemGuiProviderRegistry->initializeFromProviderGuiRegistry( mProviderGuiRegistry );
-  mSourceSelectProviderRegistry->initializeFromProviderGuiRegistry( mProviderGuiRegistry );
-
   mEditorWidgetRegistry = new QgsEditorWidgetRegistry();
   mShortcutsManager = new QgsShortcutsManager();
   mLayerTreeEmbeddedWidgetRegistry = new QgsLayerTreeEmbeddedWidgetRegistry();
   mMapLayerActionRegistry = new QgsMapLayerActionRegistry();
+  mSourceSelectProviderRegistry = new QgsSourceSelectProviderRegistry();
   mLayoutItemGuiRegistry = new QgsLayoutItemGuiRegistry();
   mWidgetStateHelper = new QgsWidgetStateHelper();
   mProcessingRecentAlgorithmLog = new QgsProcessingRecentAlgorithmLog();
   mProcessingGuiRegistry = new QgsProcessingGuiRegistry();
-
-
+  mDataItemGuiProviderRegistry = new QgsDataItemGuiProviderRegistry();
 }

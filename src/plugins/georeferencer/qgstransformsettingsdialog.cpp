@@ -24,7 +24,6 @@
 #include "qgsrasterlayer.h"
 #include "qgstransformsettingsdialog.h"
 #include "qgscoordinatereferencesystem.h"
-#include "qgsgui.h"
 
 QgsTransformSettingsDialog::QgsTransformSettingsDialog( const QString &raster, const QString &output,
     int countGCPpoints, QWidget *parent )
@@ -33,9 +32,9 @@ QgsTransformSettingsDialog::QgsTransformSettingsDialog( const QString &raster, c
   , mCountGCPpoints( countGCPpoints )
 {
   setupUi( this );
-  QgsSettings settings;
-  QgsGui::instance()->enableAutoGeometryRestore( this );
 
+  QgsSettings settings;
+  restoreGeometry( settings.value( QStringLiteral( "/Plugin-GeoReferencer/TransformSettingsWindow/geometry" ) ).toByteArray() );
 
   mOutputRaster->setStorageMode( QgsFileWidget::SaveFile );
   if ( output.isEmpty() )
@@ -124,6 +123,12 @@ QgsTransformSettingsDialog::QgsTransformSettingsDialog( const QString &raster, c
   cbxLoadInQgisWhenDone->setChecked( settings.value( QStringLiteral( "/Plugin-GeoReferencer/loadinqgis" ), false ).toBool() );
   saveGcpCheckBox->setChecked( settings.value( QStringLiteral( "/Plugin-GeoReferencer/save_gcp_points" ), false ).toBool() );
 
+}
+
+QgsTransformSettingsDialog::~QgsTransformSettingsDialog()
+{
+  QgsSettings settings;
+  settings.setValue( QStringLiteral( "Plugin-GeoReferencer/TransformSettingsWindow/geometry" ), saveGeometry() );
 }
 
 void QgsTransformSettingsDialog::getTransformSettings( QgsGeorefTransform::TransformParametrisation &tp,

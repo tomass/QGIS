@@ -34,7 +34,6 @@
 #include "qgsvectorlayer.h"
 #include "qgsvectorlayerutils.h"
 #include "qgsexpressioncontextutils.h"
-#include "qgsstyleentityvisitor.h"
 
 #include <QDomDocument>
 #include <QDomElement>
@@ -548,25 +547,6 @@ QgsSymbolList QgsGraduatedSymbolRenderer::symbols( QgsRenderContext &context ) c
     lst.append( range.symbol() );
   }
   return lst;
-}
-
-bool QgsGraduatedSymbolRenderer::accept( QgsStyleEntityVisitorInterface *visitor ) const
-{
-  for ( const QgsRendererRange &range : mRanges )
-  {
-    QgsStyleSymbolEntity entity( range.symbol() );
-    if ( !visitor->visit( QgsStyleEntityVisitorInterface::StyleLeaf( &entity, QStringLiteral( "%1 - %2" ).arg( range.lowerValue() ).arg( range.upperValue() ), range.label() ) ) )
-      return false;
-  }
-
-  if ( mSourceColorRamp )
-  {
-    QgsStyleColorRampEntity entity( mSourceColorRamp.get() );
-    if ( !visitor->visit( QgsStyleEntityVisitorInterface::StyleLeaf( &entity ) ) )
-      return false;
-  }
-
-  return true;
 }
 
 void QgsGraduatedSymbolRenderer::makeBreaksSymmetric( QList<double> &breaks, double symmetryPoint, bool astride )

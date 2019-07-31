@@ -1,6 +1,6 @@
 /***************************************************************************
-                         qgsmdalprovider.cpp
-                         -------------------
+                         qgsmeshmemorydataprovider.cpp
+                         -----------------------------
     begin                : April 2018
     copyright            : (C) 2018 by Peter Petrik
     email                : zilolv at gmail dot com
@@ -20,12 +20,16 @@
 #include "qgsmdalprovider.h"
 #include "qgstriangularmesh.h"
 #include "qgslogger.h"
+#include "qgsmeshmemorydataprovider.h"
 #include "qgsapplication.h"
-#include "qgsmdaldataitems.h"
 
+#ifdef HAVE_GUI
+#include "qgssourceselectprovider.h"
+#include "qgsmdalsourceselect.h"
+#endif
 
-const QString QgsMdalProvider::MDAL_PROVIDER_KEY = QStringLiteral( "mdal" );
-const QString QgsMdalProvider::MDAL_PROVIDER_DESCRIPTION = QStringLiteral( "MDAL provider" );
+static const QString TEXT_PROVIDER_KEY = QStringLiteral( "mdal" );
+static const QString TEXT_PROVIDER_DESCRIPTION = QStringLiteral( "MDAL provider" );
 
 bool QgsMdalProvider::isValid() const
 {
@@ -34,12 +38,12 @@ bool QgsMdalProvider::isValid() const
 
 QString QgsMdalProvider::name() const
 {
-  return MDAL_PROVIDER_KEY;
+  return TEXT_PROVIDER_KEY;
 }
 
 QString QgsMdalProvider::description() const
 {
-  return MDAL_PROVIDER_DESCRIPTION;
+  return TEXT_PROVIDER_DESCRIPTION;
 }
 
 QgsCoordinateReferenceSystem QgsMdalProvider::crs() const
@@ -537,46 +541,86 @@ QgsMeshDataBlock QgsMdalProvider::areFacesActive( QgsMeshDatasetIndex index, int
 
 /*----------------------------------------------------------------------------------------------*/
 
-QgsMdalProvider *QgsMdalProviderMetadata::createProvider( const QString &uri, const QgsDataProvider::ProviderOptions &options )
+/**
+ * Class factory to return a pointer to a newly created
+ * QgsGdalProvider object
+ */
+QGISEXTERN QgsMdalProvider *classFactory( const QString *uri, const QgsDataProvider::ProviderOptions &options )
 {
-  return new QgsMdalProvider( uri, options );
+  return new QgsMdalProvider( *uri, options );
 }
 
-QList<QgsDataItemProvider *> QgsMdalProviderMetadata::dataItemProviders() const
+/**
+ * Required key function (used to map the plugin to a data store type)
+*/
+QGISEXTERN QString providerKey()
 {
-  QList<QgsDataItemProvider *> providers;
-  providers << new QgsMdalDataItemProvider;
+  return TEXT_PROVIDER_KEY;
+}
+
+/**
+ * Required description function
+ */
+QGISEXTERN QString description()
+{
+  return TEXT_PROVIDER_DESCRIPTION;
+}
+
+/**
+ * Required isProvider function. Used to determine if this shared library
+ * is a data provider plugin
+ */
+QGISEXTERN bool isProvider()
+{
+  return true;
+}
+
+QGISEXTERN void cleanupProvider()
+{
+}
+
+#ifdef HAVE_GUI
+
+//! Provider for mdal mesh source select
+class QgsMdalMeshSourceSelectProvider : public QgsSourceSelectProvider
+{
+  public:
+
+    QString providerKey() const override { return QStringLiteral( "mdal" ); }
+    QString text() const override { return QObject::tr( "Mesh" ); }
+    int ordering() const override { return QgsSourceSelectProvider::OrderLocalProvider + 22; }
+    QIcon icon() const override { return QgsApplication::getThemeIcon( QStringLiteral( "/mActionAddMeshLayer.svg" ) ); }
+    QgsAbstractDataSourceWidget *createDataSourceWidget( QWidget *parent = nullptr, Qt::WindowFlags fl = Qt::Widget, QgsProviderRegistry::WidgetMode widgetMode = QgsProviderRegistry::WidgetMode::Embedded ) const override
+    {
+      return new QgsMdalSourceSelect( parent, fl, widgetMode );
+    }
+};
+
+
+QGISEXTERN QList<QgsSourceSelectProvider *> *sourceSelectProviders()
+{
+  QList<QgsSourceSelectProvider *> *providers = new QList<QgsSourceSelectProvider *>();
+
+  *providers
+      << new QgsMdalMeshSourceSelectProvider;
+
   return providers;
 }
 
-QString QgsMdalProviderMetadata::filters( FilterType type )
+/**
+  Builds the list of mesh file filter strings
+
+  We query MDAL for a list of supported mesh formats; we then build
+  a list of file filter strings from that list to be used for meshes and
+  also one for datasets. We return a strings
+  that contains this list that is suitable for use in a
+  QFileDialog::getOpenFileNames() call.
+
+  \since QGIS 3.6
+*/
+QGISEXTERN void fileMeshFilters( QString &fileMeshFiltersString, QString &fileMeshDatasetFiltersString )
 {
-  switch ( type )
-  {
-    case QgsProviderMetadata::FilterType::FilterMesh:
-    {
-      QString fileMeshFiltersString;
-      QString fileMeshDatasetFiltersString;
-      QgsMdalProvider::fileMeshFilters( fileMeshFiltersString, fileMeshDatasetFiltersString );
-      return fileMeshFiltersString;
-    }
-    case QgsProviderMetadata::FilterType::FilterMeshDataset:
-    {
-      QString fileMeshFiltersString;
-      QString fileMeshDatasetFiltersString;
-      QgsMdalProvider::fileMeshFilters( fileMeshFiltersString, fileMeshDatasetFiltersString );
-      return fileMeshDatasetFiltersString;
-    }
-    default:
-      return QString();
-  }
+  QgsMdalProvider::fileMeshFilters( fileMeshFiltersString, fileMeshDatasetFiltersString );
 }
 
-QgsMdalProviderMetadata::QgsMdalProviderMetadata()
-  : QgsProviderMetadata( QgsMdalProvider::MDAL_PROVIDER_KEY, QgsMdalProvider::MDAL_PROVIDER_DESCRIPTION )
-{}
-
-QGISEXTERN QgsProviderMetadata *providerMetadataFactory()
-{
-  return new QgsMdalProviderMetadata();
-}
+#endif

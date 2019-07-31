@@ -592,6 +592,7 @@ void QgsMapCanvas::mapThemeChanged( const QString &theme )
   }
 }
 
+
 void QgsMapCanvas::rendererJobFinished()
 {
   QgsDebugMsg( QStringLiteral( "CANVAS finish! %1" ).arg( !mJobCanceled ) );
@@ -602,8 +603,6 @@ void QgsMapCanvas::rendererJobFinished()
   const auto constErrors = mJob->errors();
   for ( const QgsMapRendererJob::Error &error : constErrors )
   {
-    QgsMapLayer *layer = QgsProject::instance()->mapLayer( error.layerID );
-    emit renderErrorOccurred( error.message, layer );
     QgsMessageLog::logMessage( error.layerID + " :: " + error.message, tr( "Rendering" ) );
   }
 

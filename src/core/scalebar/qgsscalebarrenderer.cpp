@@ -18,7 +18,6 @@
 #include "qgsscalebarsettings.h"
 #include "qgslayoututils.h"
 #include "qgstextrenderer.h"
-#include "qgsexpressioncontextutils.h"
 #include <QFontMetricsF>
 #include <QPainter>
 
@@ -35,35 +34,19 @@ void QgsScaleBarRenderer::drawDefaultLabels( QgsRenderContext &context, const Qg
 
   QgsTextFormat format = settings.textFormat();
 
-  QgsExpressionContextScope *scaleScope = new QgsExpressionContextScope( QStringLiteral( "scalebar_text" ) );
-  QgsExpressionContextScopePopper scopePopper( context.expressionContext(), scaleScope );
-
   QString firstLabel = firstLabelString( settings );
   QFontMetricsF fontMetrics = QgsTextRenderer::fontMetrics( context, format );
   double xOffset = fontMetrics.width( firstLabel ) / 2.0;
 
   double scaledBoxContentSpace = context.convertToPainterUnits( settings.boxContentSpace(), QgsUnitTypes::RenderMillimeters );
-  double scaledLabelBarSpace = context.convertToPainterUnits( settings.labelBarSpace(), QgsUnitTypes::RenderMillimeters );
-  double scaledHeight = context.convertToPainterUnits( settings.height(), QgsUnitTypes::RenderMillimeters );
 
   double currentLabelNumber = 0.0;
 
   int nSegmentsLeft = settings.numberOfSegmentsLeft();
   int segmentCounter = 0;
-
   QString currentNumericLabel;
-  QList<double> positions = segmentPositions( scaleContext, settings );
 
-  bool drawZero = true;
-  switch ( settings.labelHorizontalPlacement() )
-  {
-    case QgsScaleBarSettings::LabelCenteredSegment:
-      drawZero = false;
-      break;
-    case QgsScaleBarSettings::LabelCenteredEdge:
-      drawZero = true;
-      break;
-  }
+  QList<double> positions = segmentPositions( scaleContext, settings );
 
   for ( int i = 0; i < positions.size(); ++i )
   {
@@ -74,7 +57,7 @@ void QgsScaleBarRenderer::drawDefaultLabels( QgsRenderContext &context, const Qg
     }
     else if ( segmentCounter != 0 && segmentCounter == nSegmentsLeft ) //reset label number to 0 if there are left segments
     {
-      currentLabelNumber = 0.0;
+      currentLabelNumber = 0;
     }
 
     if ( segmentCounter >= nSegmentsLeft )
@@ -82,29 +65,11 @@ void QgsScaleBarRenderer::drawDefaultLabels( QgsRenderContext &context, const Qg
       currentNumericLabel = QString::number( currentLabelNumber / settings.mapUnitsPerScaleBarUnit() );
     }
 
-    //don't draw label for intermediate left segments or the zero label when it needs to be skipped
-    if ( ( segmentCounter == 0 || segmentCounter >= nSegmentsLeft ) && ( currentNumericLabel != QStringLiteral( "0" ) || drawZero ) )
+    if ( segmentCounter == 0 || segmentCounter >= nSegmentsLeft ) //don't draw label for intermediate left segments
     {
-      scaleScope->addVariable( QgsExpressionContextScope::StaticVariable( QStringLiteral( "scale_value" ), currentNumericLabel, true, false ) );
-      QPointF pos;
-      if ( settings.labelHorizontalPlacement() == QgsScaleBarSettings::LabelCenteredSegment )
-      {
-        if ( segmentCounter == 0 )
-        {
-          // if the segment counter is zero with a non zero label, this is the left-of-zero label
-          pos.setX( context.convertToPainterUnits( positions.at( i ) + ( scaleContext.segmentWidth / 2 ), QgsUnitTypes::RenderMillimeters ) );
-        }
-        else
-        {
-          pos.setX( context.convertToPainterUnits( positions.at( i ) - ( scaleContext.segmentWidth / 2 ), QgsUnitTypes::RenderMillimeters ) );
-        }
-      }
-      else
-      {
-        pos.setX( context.convertToPainterUnits( positions.at( i ), QgsUnitTypes::RenderMillimeters ) + xOffset );
-      }
-      pos.setY( fontMetrics.ascent() + scaledBoxContentSpace + ( settings.labelVerticalPlacement() == QgsScaleBarSettings::LabelBelowSegment ? scaledHeight + scaledLabelBarSpace : 0 ) );
-      QgsTextRenderer::drawText( pos, 0, QgsTextRenderer::AlignCenter, QStringList() << currentNumericLabel, context, format );
+      QgsTextRenderer::drawText( QPointF( context.convertToPainterUnits( positions.at( i ), QgsUnitTypes::RenderMillimeters ) + xOffset,
+                                          fontMetrics.ascent() + scaledBoxContentSpace ), 0, QgsTextRenderer::AlignCenter,
+                                 QStringList() << currentNumericLabel, context, format );
     }
 
     if ( segmentCounter >= nSegmentsLeft )
@@ -121,20 +86,10 @@ void QgsScaleBarRenderer::drawDefaultLabels( QgsRenderContext &context, const Qg
     // of it is, without considering the unit label suffix. That's drawn at the end after
     // horizontally centering just the numeric portion.
     currentNumericLabel = QString::number( currentLabelNumber / settings.mapUnitsPerScaleBarUnit() );
-    scaleScope->addVariable( QgsExpressionContextScope::StaticVariable( QStringLiteral( "scale_value" ), currentNumericLabel, true, false ) );
-    QPointF pos;
-    pos.setY( fontMetrics.ascent() + scaledBoxContentSpace + ( settings.labelVerticalPlacement() == QgsScaleBarSettings::LabelBelowSegment ? scaledHeight + scaledLabelBarSpace : 0 ) );
-    if ( settings.labelHorizontalPlacement() == QgsScaleBarSettings::LabelCenteredSegment )
-    {
-      pos.setX( context.convertToPainterUnits( positions.at( positions.size() - 1 ) + ( scaleContext.segmentWidth / 2 ), QgsUnitTypes::RenderMillimeters ) + xOffset );
-      QgsTextRenderer::drawText( pos, 0, QgsTextRenderer::AlignCenter, QStringList() << ( currentNumericLabel + ' ' + settings.unitLabel() ), context, format );
-    }
-    else
-    {
-      pos.setX( context.convertToPainterUnits( positions.at( positions.size() - 1 ) + scaleContext.segmentWidth, QgsUnitTypes::RenderMillimeters ) + xOffset
-                - fontMetrics.width( currentNumericLabel ) / 2.0 );
-      QgsTextRenderer::drawText( pos, 0, QgsTextRenderer::AlignLeft, QStringList() << ( currentNumericLabel + ' ' + settings.unitLabel() ), context, format );
-    }
+    QgsTextRenderer::drawText( QPointF( context.convertToPainterUnits( positions.at( positions.size() - 1 ) + scaleContext.segmentWidth, QgsUnitTypes::RenderMillimeters ) + xOffset
+                                        - fontMetrics.width( currentNumericLabel ) / 2.0,
+                                        fontMetrics.ascent() + scaledBoxContentSpace ), 0, QgsTextRenderer::AlignLeft,
+                               QStringList() << ( currentNumericLabel + ' ' + settings.unitLabel() ), context, format );
   }
 
   painter->restore();
@@ -146,48 +101,18 @@ QSizeF QgsScaleBarRenderer::calculateBoxSize( const QgsScaleBarSettings &setting
   QFont font = settings.textFormat().toQFont();
 
   //consider centered first label
-  double firstLabelWidth = QgsLayoutUtils::textWidthMM( font, firstLabelString( settings ) );
-  if ( settings.labelHorizontalPlacement() == QgsScaleBarSettings::LabelCenteredSegment )
-  {
-    if ( firstLabelWidth > scaleContext.segmentWidth )
-    {
-      firstLabelWidth = ( firstLabelWidth - scaleContext.segmentWidth ) / 2;
-    }
-    else
-    {
-      firstLabelWidth = 0.0;
-    }
-  }
-  else
-  {
-    firstLabelWidth = firstLabelWidth / 2;
-  }
+  double firstLabelLeft = QgsLayoutUtils::textWidthMM( font, firstLabelString( settings ) ) / 2;
 
   //consider last number and label
+
   double largestLabelNumber = settings.numberOfSegments() * settings.unitsPerSegment() / settings.mapUnitsPerScaleBarUnit();
   QString largestNumberLabel = QString::number( largestLabelNumber );
-  QString largestLabel = largestNumberLabel + ' ' + settings.unitLabel();
-  double largestLabelWidth;
-  if ( settings.labelHorizontalPlacement() == QgsScaleBarSettings::LabelCenteredSegment )
-  {
-    largestLabelWidth = QgsLayoutUtils::textWidthMM( font, largestLabel );
-    if ( largestLabelWidth > scaleContext.segmentWidth )
-    {
-      largestLabelWidth = ( largestLabelWidth - scaleContext.segmentWidth ) / 2;
-    }
-    else
-    {
-      largestLabelWidth = 0.0;
-    }
-  }
-  else
-  {
-    largestLabelWidth = QgsLayoutUtils::textWidthMM( font, largestLabel ) - QgsLayoutUtils::textWidthMM( font, largestNumberLabel ) / 2;
-  }
+  QString largestLabel = QString::number( largestLabelNumber ) + ' ' + settings.unitLabel();
+  double largestLabelWidth = QgsLayoutUtils::textWidthMM( font, largestLabel ) - QgsLayoutUtils::textWidthMM( font, largestNumberLabel ) / 2;
 
   double totalBarLength = scaleContext.segmentWidth * ( settings.numberOfSegments() + ( settings.numberOfSegmentsLeft() > 0 ? 1 : 0 ) );
 
-  double width = firstLabelWidth + totalBarLength + 2 * settings.pen().widthF() + largestLabelWidth + 2 * settings.boxContentSpace();
+  double width = firstLabelLeft + totalBarLength + 2 * settings.pen().widthF() + largestLabelWidth + 2 * settings.boxContentSpace();
   double height = settings.height() + settings.labelBarSpace() + 2 * settings.boxContentSpace() + QgsLayoutUtils::fontAscentMM( font );
 
   return QSizeF( width, height );
@@ -213,26 +138,10 @@ double QgsScaleBarRenderer::firstLabelXOffset( const QgsScaleBarSettings &settin
   Q_NOWARN_DEPRECATED_POP
 }
 
-double QgsScaleBarRenderer::firstLabelXOffset( const QgsScaleBarSettings &settings, const QgsRenderContext &context, const ScaleBarContext &scaleContext ) const
+double QgsScaleBarRenderer::firstLabelXOffset( const QgsScaleBarSettings &settings, const QgsRenderContext &context ) const
 {
   QString firstLabel = firstLabelString( settings );
-  double firstLabelWidth = QgsTextRenderer::textWidth( context, settings.textFormat(), QStringList() << firstLabel );
-  if ( settings.labelHorizontalPlacement() == QgsScaleBarSettings::LabelCenteredSegment )
-  {
-    if ( firstLabelWidth > scaleContext.segmentWidth )
-    {
-      firstLabelWidth = ( firstLabelWidth - scaleContext.segmentWidth ) / 2;
-    }
-    else
-    {
-      firstLabelWidth = 0.0;
-    }
-  }
-  else
-  {
-    firstLabelWidth = firstLabelWidth / 2;
-  }
-  return firstLabelWidth;
+  return QgsTextRenderer::textWidth( context, settings.textFormat(), QStringList() << firstLabel ) / 2.0;
 }
 
 QList<double> QgsScaleBarRenderer::segmentPositions( const ScaleBarContext &scaleContext, const QgsScaleBarSettings &settings ) const

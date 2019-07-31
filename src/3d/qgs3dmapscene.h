@@ -38,7 +38,6 @@ namespace Qt3DExtras
 }
 
 class QgsAbstract3DEngine;
-class QgsAbstract3DRenderer;
 class QgsMapLayer;
 class QgsCameraController;
 class Qgs3DMapScenePickHandler;
@@ -109,7 +108,6 @@ class _3D_EXPORT Qgs3DMapScene : public Qt3DCore::QEntity
     void onLayerEntityPickEvent( Qt3DRender::QPickEvent *event );
     void updateLights();
     void updateCameraLens();
-    void onRenderersChanged();
   private:
     void addLayerEntity( QgsMapLayer *layer );
     void removeLayerEntity( QgsMapLayer *layer );
@@ -118,7 +116,6 @@ class _3D_EXPORT Qgs3DMapScene : public Qt3DCore::QEntity
     void updateSceneState();
     void updateScene();
     bool updateCameraNearFarPlanes();
-    void finalizeNewEntity( Qt3DCore::QEntity *newEntity );
 
   private:
     const Qgs3DMapSettings &mMap;
@@ -132,7 +129,6 @@ class _3D_EXPORT Qgs3DMapScene : public Qt3DCore::QEntity
     Qt3DCore::QEntity *mEntityCameraViewCenter = nullptr;
     //! Keeps track of entities that belong to a particular layer
     QMap<QgsMapLayer *, Qt3DCore::QEntity *> mLayerEntities;
-    QMap<const QgsAbstract3DRenderer *, Qt3DCore::QEntity *> mRenderersEntities;
     bool mTerrainUpdateScheduled = false;
     SceneState mSceneState = Ready;
     //! List of currently registered pick handlers (used by identify tool)

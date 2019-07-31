@@ -25,9 +25,7 @@
 #include "qgspainting.h"
 #include "qgsmarkersymbollayer.h"
 #include "qgspainteffectregistry.h"
-#include "qgspallabeling.h"
 #include <QFontDatabase>
-#include <QDesktopWidget>
 
 Q_GUI_EXPORT extern int qt_defaultDpiX();
 Q_GUI_EXPORT extern int qt_defaultDpiY();
@@ -178,70 +176,13 @@ void QgsTextBufferSettings::setBlendMode( QPainter::CompositionMode mode )
 
 QgsPaintEffect *QgsTextBufferSettings::paintEffect() const
 {
-  return d->paintEffect.get();
+  return d->paintEffect;
 }
 
 void QgsTextBufferSettings::setPaintEffect( QgsPaintEffect *effect )
 {
-  d->paintEffect.reset( effect );
-}
-
-void QgsTextBufferSettings::updateDataDefinedProperties( QgsRenderContext &context, const QgsPropertyCollection &properties )
-{
-  if ( properties.isActive( QgsPalLayerSettings::BufferDraw ) )
-  {
-    context.expressionContext().setOriginalValueVariable( d->enabled );
-    d->enabled = properties.valueAsBool( QgsPalLayerSettings::BufferDraw, context.expressionContext(), d->enabled );
-  }
-
-  if ( properties.isActive( QgsPalLayerSettings::BufferSize ) )
-  {
-    context.expressionContext().setOriginalValueVariable( d->size );
-    d->size = properties.valueAsDouble( QgsPalLayerSettings::BufferSize, context.expressionContext(), d->size );
-  }
-
-  QVariant exprVal = properties.value( QgsPalLayerSettings::BufferUnit, context.expressionContext() );
-  if ( exprVal.isValid() )
-  {
-    QString units = exprVal.toString();
-    if ( !units.isEmpty() )
-    {
-      bool ok;
-      QgsUnitTypes::RenderUnit res = QgsUnitTypes::decodeRenderUnit( units, &ok );
-      if ( ok )
-        d->sizeUnit = res;
-    }
-  }
-
-  if ( properties.isActive( QgsPalLayerSettings::BufferOpacity ) )
-  {
-    context.expressionContext().setOriginalValueVariable( d->opacity * 100 );
-    d->opacity = properties.value( QgsPalLayerSettings::BufferOpacity, context.expressionContext(), d->opacity * 100 ).toDouble() / 100.0;
-  }
-
-  if ( properties.isActive( QgsPalLayerSettings::BufferColor ) )
-  {
-    context.expressionContext().setOriginalValueVariable( QgsSymbolLayerUtils::encodeColor( d->color ) );
-    d->color = properties.valueAsColor( QgsPalLayerSettings::BufferColor, context.expressionContext(), d->color );
-  }
-
-  if ( properties.isActive( QgsPalLayerSettings::BufferBlendMode ) )
-  {
-    exprVal = properties.value( QgsPalLayerSettings::BufferBlendMode, context.expressionContext() );
-    QString blendstr = exprVal.toString().trimmed();
-    if ( !blendstr.isEmpty() )
-      d->blendMode = QgsSymbolLayerUtils::decodeBlendMode( blendstr );
-  }
-
-  if ( properties.isActive( QgsPalLayerSettings::BufferJoinStyle ) )
-  {
-    exprVal = properties.value( QgsPalLayerSettings::BufferJoinStyle, context.expressionContext() );
-    QString joinstr = exprVal.toString().trimmed();
-    if ( !joinstr.isEmpty() )
-    {
-      d->joinStyle = QgsSymbolLayerUtils::decodePenJoinStyle( joinstr );
-    }
-  }
+  delete d->paintEffect;
+  d->paintEffect = effect;
 }
 
 void QgsTextBufferSettings::readFromLayer( QgsVectorLayer *layer )
@@ -395,7 +336,7 @@ QDomElement QgsTextBufferSettings::writeXml( QDomDocument &doc ) const
   textBufferElem.setAttribute( QStringLiteral( "bufferOpacity" ), d->opacity );
   textBufferElem.setAttribute( QStringLiteral( "bufferJoinStyle" ), static_cast< unsigned int >( d->joinStyle ) );
   textBufferElem.setAttribute( QStringLiteral( "bufferBlendMode" ), QgsPainting::getBlendModeEnum( d->blendMode ) );
-  if ( d->paintEffect && !QgsPaintEffectRegistry::isDefaultStack( d->paintEffect.get() ) )
+  if ( d->paintEffect && !QgsPaintEffectRegistry::isDefaultStack( d->paintEffect ) )
     d->paintEffect->saveProperties( doc, textBufferElem );
   return textBufferElem;
 }
@@ -455,16 +396,6 @@ QString QgsTextBackgroundSettings::svgFile() const
 void QgsTextBackgroundSettings::setSvgFile( const QString &file )
 {
   d->svgFile = file;
-}
-
-QgsMarkerSymbol *QgsTextBackgroundSettings::markerSymbol() const
-{
-  return d->markerSymbol.get();
-}
-
-void QgsTextBackgroundSettings::setMarkerSymbol( QgsMarkerSymbol *symbol )
-{
-  d->markerSymbol.reset( symbol );
 }
 
 QgsTextBackgroundSettings::SizeType QgsTextBackgroundSettings::sizeType() const
@@ -669,12 +600,13 @@ void QgsTextBackgroundSettings::setJoinStyle( Qt::PenJoinStyle style )
 
 QgsPaintEffect *QgsTextBackgroundSettings::paintEffect() const
 {
-  return d->paintEffect.get();
+  return d->paintEffect;
 }
 
 void QgsTextBackgroundSettings::setPaintEffect( QgsPaintEffect *effect )
 {
-  d->paintEffect.reset( effect );
+  delete d->paintEffect;
+  d->paintEffect = effect;
 }
 
 void QgsTextBackgroundSettings::readFromLayer( QgsVectorLayer *layer )
@@ -928,12 +860,6 @@ void QgsTextBackgroundSettings::readXml( const QDomElement &elem, const QgsReadW
     setPaintEffect( QgsApplication::paintEffectRegistry()->createEffect( effectElem ) );
   else
     setPaintEffect( nullptr );
-
-  const QDomElement symbolElem = backgroundElem.firstChildElement( QStringLiteral( "symbol" ) );
-  if ( !symbolElem.isNull() )
-    setMarkerSymbol( QgsSymbolLayerUtils::loadSymbol< QgsMarkerSymbol >( symbolElem, context ) );
-  else
-    setMarkerSymbol( nullptr );
 }
 
 QDomElement QgsTextBackgroundSettings::writeXml( QDomDocument &doc, const QgsReadWriteContext &context ) const
@@ -965,188 +891,9 @@ QDomElement QgsTextBackgroundSettings::writeXml( QDomDocument &doc, const QgsRea
   backgroundElem.setAttribute( QStringLiteral( "shapeJoinStyle" ), static_cast< unsigned int >( d->joinStyle ) );
   backgroundElem.setAttribute( QStringLiteral( "shapeOpacity" ), d->opacity );
   backgroundElem.setAttribute( QStringLiteral( "shapeBlendMode" ), QgsPainting::getBlendModeEnum( d->blendMode ) );
-  if ( d->paintEffect && !QgsPaintEffectRegistry::isDefaultStack( d->paintEffect.get() ) )
+  if ( d->paintEffect && !QgsPaintEffectRegistry::isDefaultStack( d->paintEffect ) )
     d->paintEffect->saveProperties( doc, backgroundElem );
-
-  if ( d->markerSymbol )
-    backgroundElem.appendChild( QgsSymbolLayerUtils::saveSymbol( QStringLiteral( "markerSymbol" ), d->markerSymbol.get(), doc, context ) );
-
   return backgroundElem;
-}
-
-void QgsTextBackgroundSettings::updateDataDefinedProperties( QgsRenderContext &context, const QgsPropertyCollection &properties )
-{
-  if ( properties.isActive( QgsPalLayerSettings::ShapeDraw ) )
-  {
-    context.expressionContext().setOriginalValueVariable( d->enabled );
-    d->enabled = properties.valueAsBool( QgsPalLayerSettings::ShapeDraw, context.expressionContext(), d->enabled );
-  }
-
-  if ( properties.isActive( QgsPalLayerSettings::ShapeSizeX ) )
-  {
-    context.expressionContext().setOriginalValueVariable( d->size.width() );
-    d->size.setWidth( properties.valueAsDouble( QgsPalLayerSettings::ShapeSizeX, context.expressionContext(), d->size.width() ) );
-  }
-  if ( properties.isActive( QgsPalLayerSettings::ShapeSizeY ) )
-  {
-    context.expressionContext().setOriginalValueVariable( d->size.height() );
-    d->size.setHeight( properties.valueAsDouble( QgsPalLayerSettings::ShapeSizeY, context.expressionContext(), d->size.height() ) );
-  }
-
-  QVariant exprVal = properties.value( QgsPalLayerSettings::ShapeSizeUnits, context.expressionContext() );
-  if ( exprVal.isValid() )
-  {
-    QString units = exprVal.toString();
-    if ( !units.isEmpty() )
-    {
-      bool ok;
-      QgsUnitTypes::RenderUnit res = QgsUnitTypes::decodeRenderUnit( units, &ok );
-      if ( ok )
-        d->sizeUnits = res;
-    }
-  }
-
-  exprVal = properties.value( QgsPalLayerSettings::ShapeKind, context.expressionContext() );
-  if ( exprVal.isValid() )
-  {
-    const QString skind = exprVal.toString().trimmed();
-    if ( !skind.isEmpty() )
-    {
-      d->type = QgsTextRendererUtils::decodeShapeType( skind );
-    }
-  }
-
-  exprVal = properties.value( QgsPalLayerSettings::ShapeSizeType, context.expressionContext() );
-  if ( exprVal.isValid() )
-  {
-    QString stype = exprVal.toString().trimmed();
-    if ( !stype.isEmpty() )
-    {
-      d->sizeType = QgsTextRendererUtils::decodeBackgroundSizeType( stype );
-    }
-  }
-
-  // data defined shape SVG path?
-  context.expressionContext().setOriginalValueVariable( d->svgFile );
-  exprVal = properties.value( QgsPalLayerSettings::ShapeSVGFile, context.expressionContext() );
-  if ( exprVal.isValid() )
-  {
-    QString svgfile = exprVal.toString().trimmed();
-    d->svgFile = QgsSymbolLayerUtils::svgSymbolNameToPath( svgfile, context.pathResolver() );
-  }
-
-  if ( properties.isActive( QgsPalLayerSettings::ShapeRotation ) )
-  {
-    context.expressionContext().setOriginalValueVariable( d->rotation );
-    d->rotation = properties.valueAsDouble( QgsPalLayerSettings::ShapeRotation, context.expressionContext(), d->rotation );
-  }
-  exprVal = properties.value( QgsPalLayerSettings::ShapeRotationType, context.expressionContext() );
-  if ( exprVal.isValid() )
-  {
-    QString rotstr = exprVal.toString().trimmed();
-    if ( !rotstr.isEmpty() )
-    {
-      d->rotationType = QgsTextRendererUtils::decodeBackgroundRotationType( rotstr );
-    }
-  }
-
-  exprVal = properties.value( QgsPalLayerSettings::ShapeOffset, context.expressionContext() );
-  if ( exprVal.isValid() )
-  {
-    QString offset = exprVal.toString();
-    if ( !offset.isEmpty() )
-    {
-      d->offset = QgsSymbolLayerUtils::decodePoint( offset );
-    }
-  }
-  exprVal = properties.value( QgsPalLayerSettings::ShapeOffsetUnits, context.expressionContext() );
-  if ( exprVal.isValid() )
-  {
-    QString units = exprVal.toString();
-    if ( !units.isEmpty() )
-    {
-      bool ok;
-      QgsUnitTypes::RenderUnit res = QgsUnitTypes::decodeRenderUnit( units, &ok );
-      if ( ok )
-        d->offsetUnits = res;
-    }
-  }
-
-  exprVal = properties.value( QgsPalLayerSettings::ShapeRadii, context.expressionContext() );
-  if ( exprVal.isValid() )
-  {
-    QString ptstr = exprVal.toString();
-    if ( !ptstr.isEmpty() )
-    {
-      d->radii = QgsSymbolLayerUtils::decodeSize( ptstr );
-    }
-  }
-
-  exprVal = properties.value( QgsPalLayerSettings::ShapeRadiiUnits, context.expressionContext() );
-  if ( exprVal.isValid() )
-  {
-    QString units = exprVal.toString();
-    if ( !units.isEmpty() )
-    {
-      bool ok;
-      QgsUnitTypes::RenderUnit res = QgsUnitTypes::decodeRenderUnit( units, &ok );
-      if ( ok )
-        d->radiiUnits = res;
-    }
-  }
-
-  if ( properties.isActive( QgsPalLayerSettings::ShapeOpacity ) )
-  {
-    context.expressionContext().setOriginalValueVariable( d->opacity * 100 );
-    d->opacity = properties.value( QgsPalLayerSettings::ShapeOpacity, context.expressionContext(), d->opacity * 100 ).toDouble() / 100.0;
-  }
-
-  if ( properties.isActive( QgsPalLayerSettings::ShapeFillColor ) )
-  {
-    context.expressionContext().setOriginalValueVariable( QgsSymbolLayerUtils::encodeColor( d->fillColor ) );
-    d->fillColor = properties.valueAsColor( QgsPalLayerSettings::ShapeFillColor, context.expressionContext(), d->fillColor );
-  }
-  if ( properties.isActive( QgsPalLayerSettings::ShapeStrokeColor ) )
-  {
-    context.expressionContext().setOriginalValueVariable( QgsSymbolLayerUtils::encodeColor( d->strokeColor ) );
-    d->strokeColor = properties.valueAsColor( QgsPalLayerSettings::ShapeStrokeColor, context.expressionContext(), d->strokeColor );
-  }
-
-  if ( properties.isActive( QgsPalLayerSettings::ShapeStrokeWidth ) )
-  {
-    context.expressionContext().setOriginalValueVariable( d->strokeWidth );
-    d->strokeWidth = properties.valueAsDouble( QgsPalLayerSettings::ShapeStrokeWidth, context.expressionContext(), d->strokeWidth );
-  }
-  exprVal = properties.value( QgsPalLayerSettings::ShapeStrokeWidthUnits, context.expressionContext() );
-  if ( exprVal.isValid() )
-  {
-    QString units = exprVal.toString();
-    if ( !units.isEmpty() )
-    {
-      bool ok;
-      QgsUnitTypes::RenderUnit res = QgsUnitTypes::decodeRenderUnit( units, &ok );
-      if ( ok )
-        d->strokeWidthUnits = res;
-    }
-  }
-
-  if ( properties.isActive( QgsPalLayerSettings::ShapeBlendMode ) )
-  {
-    exprVal = properties.value( QgsPalLayerSettings::ShapeBlendMode, context.expressionContext() );
-    QString blendstr = exprVal.toString().trimmed();
-    if ( !blendstr.isEmpty() )
-      d->blendMode = QgsSymbolLayerUtils::decodeBlendMode( blendstr );
-  }
-
-  if ( properties.isActive( QgsPalLayerSettings::ShapeJoinStyle ) )
-  {
-    exprVal = properties.value( QgsPalLayerSettings::ShapeJoinStyle, context.expressionContext() );
-    QString joinstr = exprVal.toString().trimmed();
-    if ( !joinstr.isEmpty() )
-    {
-      d->joinStyle = QgsSymbolLayerUtils::decodePenJoinStyle( joinstr );
-    }
-  }
 }
 
 
@@ -1481,95 +1228,6 @@ QDomElement QgsTextShadowSettings::writeXml( QDomDocument &doc ) const
   return shadowElem;
 }
 
-void QgsTextShadowSettings::updateDataDefinedProperties( QgsRenderContext &context, const QgsPropertyCollection &properties )
-{
-  if ( properties.isActive( QgsPalLayerSettings::ShadowDraw ) )
-  {
-    context.expressionContext().setOriginalValueVariable( d->enabled );
-    d->enabled = properties.valueAsBool( QgsPalLayerSettings::ShadowDraw, context.expressionContext(), d->enabled );
-  }
-
-  // data defined shadow under type?
-  QVariant exprVal = properties.value( QgsPalLayerSettings::ShadowUnder, context.expressionContext() );
-  if ( exprVal.isValid() )
-  {
-    QString str = exprVal.toString().trimmed();
-    if ( !str.isEmpty() )
-    {
-      d->shadowUnder = QgsTextRendererUtils::decodeShadowPlacementType( str );
-    }
-  }
-
-  if ( properties.isActive( QgsPalLayerSettings::ShadowOffsetAngle ) )
-  {
-    context.expressionContext().setOriginalValueVariable( d->offsetAngle );
-    d->offsetAngle = properties.valueAsInt( QgsPalLayerSettings::ShadowOffsetAngle, context.expressionContext(), d->offsetAngle );
-  }
-  if ( properties.isActive( QgsPalLayerSettings::ShadowOffsetDist ) )
-  {
-    context.expressionContext().setOriginalValueVariable( d->offsetDist );
-    d->offsetDist = properties.valueAsDouble( QgsPalLayerSettings::ShadowOffsetDist, context.expressionContext(), d->offsetDist );
-  }
-
-  exprVal = properties.value( QgsPalLayerSettings::ShadowOffsetUnits, context.expressionContext() );
-  if ( exprVal.isValid() )
-  {
-    QString units = exprVal.toString();
-    if ( !units.isEmpty() )
-    {
-      bool ok;
-      QgsUnitTypes::RenderUnit res = QgsUnitTypes::decodeRenderUnit( units, &ok );
-      if ( ok )
-        d->offsetUnits = res;
-    }
-  }
-
-  if ( properties.isActive( QgsPalLayerSettings::ShadowRadius ) )
-  {
-    context.expressionContext().setOriginalValueVariable( d->radius );
-    d->radius = properties.valueAsDouble( QgsPalLayerSettings::ShadowRadius, context.expressionContext(), d->radius );
-  }
-
-  exprVal = properties.value( QgsPalLayerSettings::ShadowRadiusUnits, context.expressionContext() );
-  if ( exprVal.isValid() )
-  {
-    QString units = exprVal.toString();
-    if ( !units.isEmpty() )
-    {
-      bool ok;
-      QgsUnitTypes::RenderUnit res = QgsUnitTypes::decodeRenderUnit( units, &ok );
-      if ( ok )
-        d->radiusUnits = res;
-    }
-  }
-
-  if ( properties.isActive( QgsPalLayerSettings::ShadowOpacity ) )
-  {
-    context.expressionContext().setOriginalValueVariable( d->opacity * 100 );
-    d->opacity = properties.value( QgsPalLayerSettings::ShadowOpacity, context.expressionContext(), d->opacity * 100 ).toDouble() / 100.0;
-  }
-
-  if ( properties.isActive( QgsPalLayerSettings::ShadowScale ) )
-  {
-    context.expressionContext().setOriginalValueVariable( d->scale );
-    d->scale = properties.valueAsInt( QgsPalLayerSettings::ShadowScale, context.expressionContext(), d->scale );
-  }
-
-  if ( properties.isActive( QgsPalLayerSettings::ShadowColor ) )
-  {
-    context.expressionContext().setOriginalValueVariable( QgsSymbolLayerUtils::encodeColor( d->color ) );
-    d->color = properties.valueAsColor( QgsPalLayerSettings::ShadowColor, context.expressionContext(), d->color );
-  }
-
-  if ( properties.isActive( QgsPalLayerSettings::ShadowBlendMode ) )
-  {
-    exprVal = properties.value( QgsPalLayerSettings::ShadowBlendMode, context.expressionContext() );
-    QString blendstr = exprVal.toString().trimmed();
-    if ( !blendstr.isEmpty() )
-      d->blendMode = QgsSymbolLayerUtils::decodeBlendMode( blendstr );
-  }
-}
-
 //
 // QgsTextFormat
 //
@@ -1710,16 +1368,6 @@ void QgsTextFormat::setLineHeight( double height )
   d->multilineHeight = height;
 }
 
-QColor QgsTextFormat::previewBackgroundColor() const
-{
-  return d->previewBackgroundColor;
-}
-
-void QgsTextFormat::setPreviewBackgroundColor( const QColor &color )
-{
-  d->previewBackgroundColor = color;
-}
-
 void QgsTextFormat::readFromLayer( QgsVectorLayer *layer )
 {
   QFont appFont = QApplication::font();
@@ -1796,7 +1444,6 @@ void QgsTextFormat::readFromLayer( QgsVectorLayer *layer )
   d->blendMode = QgsPainting::getCompositionMode(
                    static_cast< QgsPainting::BlendMode >( layer->customProperty( QStringLiteral( "labeling/blendMode" ), QVariant( QgsPainting::BlendNormal ) ).toUInt() ) );
   d->multilineHeight = layer->customProperty( QStringLiteral( "labeling/multilineHeight" ), QVariant( 1.0 ) ).toDouble();
-  d->previewBackgroundColor = _readColor( layer, QStringLiteral( "labeling/previewBkgrdColor" ), "#ffffff", false );
 
   mBufferSettings.readFromLayer( layer );
   mShadowSettings.readFromLayer( layer );
@@ -1880,8 +1527,6 @@ void QgsTextFormat::readXml( const QDomElement &elem, const QgsReadWriteContext 
   {
     d->opacity = ( textStyleElem.attribute( QStringLiteral( "textOpacity" ) ).toDouble() );
   }
-  d->previewBackgroundColor = QgsSymbolLayerUtils::decodeColor( textStyleElem.attribute( QStringLiteral( "previewBkgrdColor" ), QgsSymbolLayerUtils::encodeColor( Qt::white ) ) );
-
   d->blendMode = QgsPainting::getCompositionMode(
                    static_cast< QgsPainting::BlendMode >( textStyleElem.attribute( QStringLiteral( "blendMode" ), QString::number( QgsPainting::BlendNormal ) ).toUInt() ) );
 
@@ -1919,29 +1564,6 @@ void QgsTextFormat::readXml( const QDomElement &elem, const QgsReadWriteContext 
   {
     mBackgroundSettings.readXml( textStyleElem, context );
   }
-
-  if ( textStyleElem.firstChildElement( QStringLiteral( "dd_properties" ) ).isNull() )
-  {
-    mBackgroundSettings.readXml( elem, context );
-  }
-  else
-  {
-    mBackgroundSettings.readXml( textStyleElem, context );
-  }
-
-  QDomElement ddElem = textStyleElem.firstChildElement( QStringLiteral( "dd_properties" ) );
-  if ( ddElem.isNull() )
-  {
-    ddElem = elem.firstChildElement( QStringLiteral( "dd_properties" ) );
-  }
-  if ( !ddElem.isNull() )
-  {
-    d->mDataDefinedProperties.readXml( ddElem, QgsPalLayerSettings::propertyDefinitions() );
-  }
-  else
-  {
-    d->mDataDefinedProperties.clear();
-  }
 }
 
 QDomElement QgsTextFormat::writeXml( QDomDocument &doc, const QgsReadWriteContext &context ) const
@@ -1958,7 +1580,6 @@ QDomElement QgsTextFormat::writeXml( QDomDocument &doc, const QgsReadWriteContex
   textStyleElem.setAttribute( QStringLiteral( "fontStrikeout" ), d->textFont.strikeOut() );
   textStyleElem.setAttribute( QStringLiteral( "fontUnderline" ), d->textFont.underline() );
   textStyleElem.setAttribute( QStringLiteral( "textColor" ), QgsSymbolLayerUtils::encodeColor( d->textColor ) );
-  textStyleElem.setAttribute( QStringLiteral( "previewBkgrdColor" ), QgsSymbolLayerUtils::encodeColor( d->previewBackgroundColor ) );
   textStyleElem.setAttribute( QStringLiteral( "fontCapitals" ), static_cast< unsigned int >( d->textFont.capitalization() ) );
   textStyleElem.setAttribute( QStringLiteral( "fontLetterSpacing" ), d->textFont.letterSpacing() );
   textStyleElem.setAttribute( QStringLiteral( "fontWordSpacing" ), d->textFont.wordSpacing() );
@@ -1966,14 +1587,9 @@ QDomElement QgsTextFormat::writeXml( QDomDocument &doc, const QgsReadWriteContex
   textStyleElem.setAttribute( QStringLiteral( "blendMode" ), QgsPainting::getBlendModeEnum( d->blendMode ) );
   textStyleElem.setAttribute( QStringLiteral( "multilineHeight" ), d->multilineHeight );
 
-  QDomElement ddElem = doc.createElement( QStringLiteral( "dd_properties" ) );
-  d->mDataDefinedProperties.writeXml( ddElem, QgsPalLayerSettings::propertyDefinitions() );
-
   textStyleElem.appendChild( mBufferSettings.writeXml( doc ) );
   textStyleElem.appendChild( mBackgroundSettings.writeXml( doc, context ) );
   textStyleElem.appendChild( mShadowSettings.writeXml( doc ) );
-  textStyleElem.appendChild( ddElem );
-
   return textStyleElem;
 }
 
@@ -2086,289 +1702,6 @@ bool QgsTextFormat::containsAdvancedEffects() const
   return false;
 }
 
-QgsPropertyCollection &QgsTextFormat::dataDefinedProperties()
-{
-  return d->mDataDefinedProperties;
-}
-
-const QgsPropertyCollection &QgsTextFormat::dataDefinedProperties() const
-{
-  return d->mDataDefinedProperties;
-}
-
-void QgsTextFormat::setDataDefinedProperties( const QgsPropertyCollection &collection )
-{
-  d->mDataDefinedProperties = collection;
-}
-
-void QgsTextFormat::updateDataDefinedProperties( QgsRenderContext &context )
-{
-  if ( !d->mDataDefinedProperties.hasActiveProperties() )
-    return;
-
-  QString ddFontFamily;
-  context.expressionContext().setOriginalValueVariable( d->textFont.family() );
-  QVariant exprVal = d->mDataDefinedProperties.value( QgsPalLayerSettings::Family, context.expressionContext() );
-  if ( exprVal.isValid() )
-  {
-    QString family = exprVal.toString().trimmed();
-    if ( d->textFont.family() != family )
-    {
-      // testing for ddFontFamily in QFontDatabase.families() may be slow to do for every feature
-      // (i.e. don't use QgsFontUtils::fontFamilyMatchOnSystem( family ) here)
-      if ( QgsFontUtils::fontFamilyOnSystem( family ) )
-      {
-        ddFontFamily = family;
-      }
-    }
-  }
-
-  // data defined named font style?
-  QString ddFontStyle;
-  context.expressionContext().setOriginalValueVariable( d->textNamedStyle );
-  exprVal = d->mDataDefinedProperties.value( QgsPalLayerSettings::FontStyle, context.expressionContext() );
-  if ( exprVal.isValid() )
-  {
-    QString fontstyle = exprVal.toString().trimmed();
-    ddFontStyle = fontstyle;
-  }
-
-  bool ddBold = false;
-  if ( d->mDataDefinedProperties.isActive( QgsPalLayerSettings::Bold ) )
-  {
-    context.expressionContext().setOriginalValueVariable( d->textFont.bold() );
-    ddBold = d->mDataDefinedProperties.valueAsBool( QgsPalLayerSettings::Bold, context.expressionContext(), false ) ;
-  }
-
-  bool ddItalic = false;
-  if ( d->mDataDefinedProperties.isActive( QgsPalLayerSettings::Italic ) )
-  {
-    context.expressionContext().setOriginalValueVariable( d->textFont.italic() );
-    ddItalic = d->mDataDefinedProperties.valueAsBool( QgsPalLayerSettings::Italic, context.expressionContext(), false );
-  }
-
-  // TODO: update when pref for how to resolve missing family (use matching algorithm or just default font) is implemented
-  //       (currently defaults to what has been read in from layer settings)
-  QFont newFont;
-  QFontDatabase fontDb;
-  QFont appFont = QApplication::font();
-  bool newFontBuilt = false;
-  if ( ddBold || ddItalic )
-  {
-    // new font needs built, since existing style needs removed
-    newFont = QFont( !ddFontFamily.isEmpty() ? ddFontFamily : d->textFont.family() );
-    newFontBuilt = true;
-    newFont.setBold( ddBold );
-    newFont.setItalic( ddItalic );
-  }
-  else if ( !ddFontStyle.isEmpty()
-            && ddFontStyle.compare( QLatin1String( "Ignore" ), Qt::CaseInsensitive ) != 0 )
-  {
-    if ( !ddFontFamily.isEmpty() )
-    {
-      // both family and style are different, build font from database
-      QFont styledfont = fontDb.font( ddFontFamily, ddFontStyle, appFont.pointSize() );
-      if ( appFont != styledfont )
-      {
-        newFont = styledfont;
-        newFontBuilt = true;
-      }
-    }
-
-    // update the font face style
-    QgsFontUtils::updateFontViaStyle( newFontBuilt ? newFont : d->textFont, ddFontStyle );
-  }
-  else if ( !ddFontFamily.isEmpty() )
-  {
-    if ( ddFontStyle.compare( QLatin1String( "Ignore" ), Qt::CaseInsensitive ) != 0 )
-    {
-      // just family is different, build font from database
-      QFont styledfont = fontDb.font( ddFontFamily, d->textNamedStyle, appFont.pointSize() );
-      if ( appFont != styledfont )
-      {
-        newFont = styledfont;
-        newFontBuilt = true;
-      }
-    }
-    else
-    {
-      newFont = QFont( ddFontFamily );
-      newFontBuilt = true;
-    }
-  }
-
-  if ( newFontBuilt )
-  {
-    // copy over existing font settings
-    newFont.setUnderline( d->textFont.underline() );
-    newFont.setStrikeOut( d->textFont.strikeOut() );
-    newFont.setWordSpacing( d->textFont.wordSpacing() );
-    newFont.setLetterSpacing( QFont::AbsoluteSpacing, d->textFont.letterSpacing() );
-    d->textFont = newFont;
-  }
-
-  if ( d->mDataDefinedProperties.isActive( QgsPalLayerSettings::Underline ) )
-  {
-    context.expressionContext().setOriginalValueVariable( d->textFont.underline() );
-    d->textFont.setUnderline( d->mDataDefinedProperties.valueAsBool( QgsPalLayerSettings::Underline, context.expressionContext(), d->textFont.underline() ) );
-  }
-
-  if ( d->mDataDefinedProperties.isActive( QgsPalLayerSettings::Strikeout ) )
-  {
-    context.expressionContext().setOriginalValueVariable( d->textFont.strikeOut() );
-    d->textFont.setStrikeOut( d->mDataDefinedProperties.valueAsBool( QgsPalLayerSettings::Strikeout, context.expressionContext(), d->textFont.strikeOut() ) );
-  }
-
-  if ( d->mDataDefinedProperties.isActive( QgsPalLayerSettings::Color ) )
-  {
-    context.expressionContext().setOriginalValueVariable( QgsSymbolLayerUtils::encodeColor( d->textColor ) );
-    d->textColor = d->mDataDefinedProperties.valueAsColor( QgsPalLayerSettings::Color, context.expressionContext(), d->textColor );
-  }
-
-  if ( d->mDataDefinedProperties.isActive( QgsPalLayerSettings::Size ) )
-  {
-    context.expressionContext().setOriginalValueVariable( size() );
-    d->fontSize = d->mDataDefinedProperties.valueAsDouble( QgsPalLayerSettings::Size, context.expressionContext(), d->fontSize );
-  }
-
-  exprVal = d->mDataDefinedProperties.value( QgsPalLayerSettings::FontSizeUnit, context.expressionContext() );
-  if ( exprVal.isValid() )
-  {
-    QString units = exprVal.toString();
-    if ( !units.isEmpty() )
-    {
-      bool ok;
-      QgsUnitTypes::RenderUnit res = QgsUnitTypes::decodeRenderUnit( units, &ok );
-      if ( ok )
-        d->fontSizeUnits = res;
-    }
-  }
-
-  if ( d->mDataDefinedProperties.isActive( QgsPalLayerSettings::FontOpacity ) )
-  {
-    context.expressionContext().setOriginalValueVariable( d->opacity * 100 );
-    d->opacity = d->mDataDefinedProperties.value( QgsPalLayerSettings::FontOpacity, context.expressionContext(), d->opacity * 100 ).toDouble() / 100.0;
-  }
-
-  if ( d->mDataDefinedProperties.isActive( QgsPalLayerSettings::FontLetterSpacing ) )
-  {
-    context.expressionContext().setOriginalValueVariable( d->textFont.letterSpacing() );
-    d->textFont.setLetterSpacing( QFont::AbsoluteSpacing, d->mDataDefinedProperties.value( QgsPalLayerSettings::FontLetterSpacing, context.expressionContext(), d->textFont.letterSpacing() ).toDouble() );
-  }
-
-  if ( d->mDataDefinedProperties.isActive( QgsPalLayerSettings::FontWordSpacing ) )
-  {
-    context.expressionContext().setOriginalValueVariable( d->textFont.wordSpacing() );
-    d->textFont.setWordSpacing( d->mDataDefinedProperties.value( QgsPalLayerSettings::FontWordSpacing, context.expressionContext(), d->textFont.wordSpacing() ).toDouble() );
-  }
-
-  if ( d->mDataDefinedProperties.isActive( QgsPalLayerSettings::FontBlendMode ) )
-  {
-    exprVal = d->mDataDefinedProperties.value( QgsPalLayerSettings::FontBlendMode, context.expressionContext() );
-    QString blendstr = exprVal.toString().trimmed();
-    if ( !blendstr.isEmpty() )
-      d->blendMode = QgsSymbolLayerUtils::decodeBlendMode( blendstr );
-  }
-
-  mShadowSettings.updateDataDefinedProperties( context, d->mDataDefinedProperties );
-  mBackgroundSettings.updateDataDefinedProperties( context, d->mDataDefinedProperties );
-  mBufferSettings.updateDataDefinedProperties( context, d->mDataDefinedProperties );
-}
-
-QPixmap QgsTextFormat::textFormatPreviewPixmap( const QgsTextFormat &format, QSize size, const QString &previewText, int padding )
-{
-  QgsTextFormat tempFormat = format;
-  QPixmap pixmap( size );
-  pixmap.fill( Qt::transparent );
-  QPainter painter;
-  painter.begin( &pixmap );
-
-  painter.setRenderHint( QPainter::Antialiasing );
-
-  QRect rect( 0, 0, size.width(), size.height() );
-
-  // shameless eye candy - use a subtle gradient when drawing background
-  painter.setPen( Qt::NoPen );
-  QColor background1 = tempFormat.previewBackgroundColor();
-  if ( ( background1.lightnessF() < 0.7 ) )
-  {
-    background1 = background1.darker( 125 );
-  }
-  else
-  {
-    background1 = background1.lighter( 125 );
-  }
-  QColor background2 = tempFormat.previewBackgroundColor();
-  QLinearGradient linearGrad( QPointF( 0, 0 ), QPointF( 0, rect.height() ) );
-  linearGrad.setColorAt( 0, background1 );
-  linearGrad.setColorAt( 1, background2 );
-  painter.setBrush( QBrush( linearGrad ) );
-  if ( size.width() > 30 )
-  {
-    painter.drawRoundedRect( rect, 6, 6 );
-  }
-  else
-  {
-    // don't use rounded rect for small previews
-    painter.drawRect( rect );
-  }
-  painter.setBrush( Qt::NoBrush );
-  painter.setPen( Qt::NoPen );
-  padding += 1; // move text away from background border
-
-  QgsRenderContext context;
-  QgsMapToPixel newCoordXForm;
-  newCoordXForm.setParameters( 1, 0, 0, 0, 0, 0 );
-  context.setMapToPixel( newCoordXForm );
-
-  context.setScaleFactor( QgsApplication::desktop()->logicalDpiX() / 25.4 );
-  context.setUseAdvancedEffects( true );
-  context.setPainter( &painter );
-
-  // slightly inset text to account for buffer/background
-  double xtrans = 0;
-  if ( tempFormat.buffer().enabled() )
-    xtrans = context.convertToPainterUnits( tempFormat.buffer().size(), tempFormat.buffer().sizeUnit(), tempFormat.buffer().sizeMapUnitScale() );
-  if ( tempFormat.background().enabled() && tempFormat.background().sizeType() != QgsTextBackgroundSettings::SizeFixed )
-    xtrans = std::max( xtrans, context.convertToPainterUnits( tempFormat.background().size().width(), tempFormat.background().sizeUnit(), tempFormat.background().sizeMapUnitScale() ) );
-
-  double ytrans = 0.0;
-  if ( tempFormat.buffer().enabled() )
-    ytrans = std::max( ytrans, context.convertToPainterUnits( tempFormat.buffer().size(), tempFormat.buffer().sizeUnit(), tempFormat.buffer().sizeMapUnitScale() ) );
-  if ( tempFormat.background().enabled() )
-    ytrans = std::max( ytrans, context.convertToPainterUnits( tempFormat.background().size().height(), tempFormat.background().sizeUnit(), tempFormat.background().sizeMapUnitScale() ) );
-
-  const QStringList text = QStringList() << ( previewText.isEmpty() ? QObject::tr( "Aa" ) : previewText );
-  const double textHeight = QgsTextRenderer::textHeight( context, tempFormat, text, QgsTextRenderer::Rect );
-  QRectF textRect = rect;
-  textRect.setLeft( xtrans + padding );
-  textRect.setWidth( rect.width() - xtrans - 2 * padding );
-
-  if ( textRect.width() > 2000 )
-    textRect.setWidth( 2000 - 2 * padding );
-
-  const double bottom = textRect.height() / 2 + textHeight / 2;
-  textRect.setTop( bottom - textHeight );
-  textRect.setBottom( bottom );
-
-  QgsTextRenderer::drawText( textRect, 0, QgsTextRenderer::AlignCenter, text, context, tempFormat );
-
-  // draw border on top of text
-  painter.setBrush( Qt::NoBrush );
-  painter.setPen( QPen( tempFormat.previewBackgroundColor().darker( 150 ), 0 ) );
-  if ( size.width() > 30 )
-  {
-    painter.drawRoundedRect( rect, 6, 6 );
-  }
-  else
-  {
-    // don't use rounded rect for small previews
-    painter.drawRect( rect );
-  }
-  painter.end();
-  return pixmap;
-}
-
 
 int QgsTextRenderer::sizeToPixel( double size, const QgsRenderContext &c, QgsUnitTypes::RenderUnit unit, const QgsMapUnitScale &mapUnitScale )
 {
@@ -2377,10 +1710,7 @@ int QgsTextRenderer::sizeToPixel( double size, const QgsRenderContext &c, QgsUni
 
 void QgsTextRenderer::drawText( const QRectF &rect, double rotation, QgsTextRenderer::HAlignment alignment, const QStringList &textLines, QgsRenderContext &context, const QgsTextFormat &format, bool )
 {
-  QgsTextFormat tmpFormat = format;
-  if ( format.dataDefinedProperties().hasActiveProperties() ) // note, we use format instead of tmpFormat here, it's const and potentially avoids a detach
-    tmpFormat.updateDataDefinedProperties( context );
-  tmpFormat = updateShadowPosition( tmpFormat );
+  QgsTextFormat tmpFormat = updateShadowPosition( format );
 
   if ( tmpFormat.background().enabled() )
   {
@@ -2397,10 +1727,7 @@ void QgsTextRenderer::drawText( const QRectF &rect, double rotation, QgsTextRend
 
 void QgsTextRenderer::drawText( QPointF point, double rotation, QgsTextRenderer::HAlignment alignment, const QStringList &textLines, QgsRenderContext &context, const QgsTextFormat &format, bool )
 {
-  QgsTextFormat tmpFormat = format;
-  if ( format.dataDefinedProperties().hasActiveProperties() ) // note, we use format instead of tmpFormat here, it's const and potentially avoids a detach
-    tmpFormat.updateDataDefinedProperties( context );
-  tmpFormat = updateShadowPosition( tmpFormat );
+  QgsTextFormat tmpFormat = updateShadowPosition( format );
 
   if ( tmpFormat.background().enabled() )
   {
@@ -2421,7 +1748,7 @@ QgsTextFormat QgsTextRenderer::updateShadowPosition( const QgsTextFormat &format
     return format;
 
   QgsTextFormat tmpFormat = format;
-  if ( tmpFormat.background().enabled() && tmpFormat.background().type() != QgsTextBackgroundSettings::ShapeMarkerSymbol ) // background shadow not compatible with marker symbol backgrounds
+  if ( tmpFormat.background().enabled() )
   {
     tmpFormat.shadow().setShadowPlacement( QgsTextShadowSettings::ShadowShape );
   }
@@ -2762,291 +2089,264 @@ void QgsTextRenderer::drawBackground( QgsRenderContext &context, QgsTextRenderer
 
   // TODO: the following label-buffered generated shapes and SVG symbols should be moved into marker symbology classes
 
-  switch ( background.type() )
+  if ( background.type() == QgsTextBackgroundSettings::ShapeSVG )
   {
-    case QgsTextBackgroundSettings::ShapeSVG:
-    case QgsTextBackgroundSettings::ShapeMarkerSymbol:
+    // all calculations done in shapeSizeUnits, which are then passed to symbology class for painting
+
+    if ( background.svgFile().isEmpty() )
+      return;
+
+    double sizeOut = 0.0;
+    // only one size used for SVG sizing/scaling (no use of shapeSize.y() or Y field in gui)
+    if ( background.sizeType() == QgsTextBackgroundSettings::SizeFixed )
     {
-      // all calculations done in shapeSizeUnits, which are then passed to symbology class for painting
+      sizeOut = context.convertToPainterUnits( background.size().width(), background.sizeUnit(), background.sizeMapUnitScale() );
+    }
+    else if ( background.sizeType() == QgsTextBackgroundSettings::SizeBuffer )
+    {
+      sizeOut = std::max( component.size.width(), component.size.height() );
+      double bufferSize = context.convertToPainterUnits( background.size().width(), background.sizeUnit(), background.sizeMapUnitScale() );
 
-      if ( background.type() == QgsTextBackgroundSettings::ShapeSVG && background.svgFile().isEmpty() )
-        return;
+      // add buffer
+      sizeOut += bufferSize * 2;
+    }
 
-      if ( background.type() == QgsTextBackgroundSettings::ShapeMarkerSymbol && !background.markerSymbol() )
-        return;
+    // don't bother rendering symbols smaller than 1x1 pixels in size
+    // TODO: add option to not show any svgs under/over a certain size
+    if ( sizeOut < 1.0 )
+      return;
 
-      double sizeOut = 0.0;
-      // only one size used for SVG/marker symbol sizing/scaling (no use of shapeSize.y() or Y field in gui)
-      if ( background.sizeType() == QgsTextBackgroundSettings::SizeFixed )
-      {
-        sizeOut = context.convertToPainterUnits( background.size().width(), background.sizeUnit(), background.sizeMapUnitScale() );
-      }
-      else if ( background.sizeType() == QgsTextBackgroundSettings::SizeBuffer )
-      {
-        sizeOut = std::max( component.size.width(), component.size.height() );
-        double bufferSize = context.convertToPainterUnits( background.size().width(), background.sizeUnit(), background.sizeMapUnitScale() );
+    QgsStringMap map; // for SVG symbology marker
+    map[QStringLiteral( "name" )] = background.svgFile().trimmed();
+    map[QStringLiteral( "size" )] = QString::number( sizeOut );
+    map[QStringLiteral( "size_unit" )] = QgsUnitTypes::encodeUnit( QgsUnitTypes::RenderPixels );
+    map[QStringLiteral( "angle" )] = QString::number( 0.0 ); // angle is handled by this local painter
 
-        // add buffer
-        sizeOut += bufferSize * 2;
-      }
+    // offset is handled by this local painter
+    // TODO: see why the marker renderer doesn't seem to translate offset *after* applying rotation
+    //map["offset"] = QgsSymbolLayerUtils::encodePoint( tmpLyr.shapeOffset );
+    //map["offset_unit"] = QgsUnitTypes::encodeUnit(
+    //                       tmpLyr.shapeOffsetUnits == QgsPalLayerSettings::MapUnits ? QgsUnitTypes::MapUnit : QgsUnitTypes::MM );
 
-      // don't bother rendering symbols smaller than 1x1 pixels in size
-      // TODO: add option to not show any svgs under/over a certain size
-      if ( sizeOut < 1.0 )
-        return;
+    map[QStringLiteral( "fill" )] = background.fillColor().name();
+    map[QStringLiteral( "outline" )] = background.strokeColor().name();
+    map[QStringLiteral( "outline-width" )] = QString::number( background.strokeWidth() );
+    map[QStringLiteral( "outline_width_unit" )] = QgsUnitTypes::encodeUnit( background.strokeWidthUnit() );
 
-      std::unique_ptr< QgsMarkerSymbol > renderedSymbol;
-      if ( background.type() == QgsTextBackgroundSettings::ShapeSVG )
-      {
-        QgsStringMap map; // for SVG symbology marker
-        map[QStringLiteral( "name" )] = background.svgFile().trimmed();
-        map[QStringLiteral( "size" )] = QString::number( sizeOut );
-        map[QStringLiteral( "size_unit" )] = QgsUnitTypes::encodeUnit( QgsUnitTypes::RenderPixels );
-        map[QStringLiteral( "angle" )] = QString::number( 0.0 ); // angle is handled by this local painter
+    if ( format.shadow().enabled() && format.shadow().shadowPlacement() == QgsTextShadowSettings::ShadowShape )
+    {
+      QgsTextShadowSettings shadow = format.shadow();
+      // configure SVG shadow specs
+      QgsStringMap shdwmap( map );
+      shdwmap[QStringLiteral( "fill" )] = shadow.color().name();
+      shdwmap[QStringLiteral( "outline" )] = shadow.color().name();
+      shdwmap[QStringLiteral( "size" )] = QString::number( sizeOut );
 
-        // offset is handled by this local painter
-        // TODO: see why the marker renderer doesn't seem to translate offset *after* applying rotation
-        //map["offset"] = QgsSymbolLayerUtils::encodePoint( tmpLyr.shapeOffset );
-        //map["offset_unit"] = QgsUnitTypes::encodeUnit(
-        //                       tmpLyr.shapeOffsetUnits == QgsPalLayerSettings::MapUnits ? QgsUnitTypes::MapUnit : QgsUnitTypes::MM );
+      // store SVG's drawing in QPicture for drop shadow call
+      QPicture svgPict;
+      QPainter svgp;
+      svgp.begin( &svgPict );
 
-        map[QStringLiteral( "fill" )] = background.fillColor().name();
-        map[QStringLiteral( "outline" )] = background.strokeColor().name();
-        map[QStringLiteral( "outline-width" )] = QString::number( background.strokeWidth() );
-        map[QStringLiteral( "outline_width_unit" )] = QgsUnitTypes::encodeUnit( background.strokeWidthUnit() );
+      // draw shadow symbol
 
-        if ( format.shadow().enabled() && format.shadow().shadowPlacement() == QgsTextShadowSettings::ShadowShape )
-        {
-          QgsTextShadowSettings shadow = format.shadow();
-          // configure SVG shadow specs
-          QgsStringMap shdwmap( map );
-          shdwmap[QStringLiteral( "fill" )] = shadow.color().name();
-          shdwmap[QStringLiteral( "outline" )] = shadow.color().name();
-          shdwmap[QStringLiteral( "size" )] = QString::number( sizeOut );
+      // clone current render context map unit/mm conversion factors, but not
+      // other map canvas parameters, then substitute this painter for use in symbology painting
+      // NOTE: this is because the shadow needs to be scaled correctly for output to map canvas,
+      //       but will be created relative to the SVG's computed size, not the current map canvas
+      QgsRenderContext shdwContext;
+      shdwContext.setMapToPixel( context.mapToPixel() );
+      shdwContext.setScaleFactor( context.scaleFactor() );
+      shdwContext.setPainter( &svgp );
 
-          // store SVG's drawing in QPicture for drop shadow call
-          QPicture svgPict;
-          QPainter svgp;
-          svgp.begin( &svgPict );
+      QgsSymbolLayer *symShdwL = QgsSvgMarkerSymbolLayer::create( shdwmap );
+      QgsSvgMarkerSymbolLayer *svgShdwM = static_cast<QgsSvgMarkerSymbolLayer *>( symShdwL );
+      QgsSymbolRenderContext svgShdwContext( shdwContext, QgsUnitTypes::RenderUnknownUnit, background.opacity() );
 
-          // draw shadow symbol
+      svgShdwM->renderPoint( QPointF( sizeOut / 2, -sizeOut / 2 ), svgShdwContext );
+      svgp.end();
 
-          // clone current render context map unit/mm conversion factors, but not
-          // other map canvas parameters, then substitute this painter for use in symbology painting
-          // NOTE: this is because the shadow needs to be scaled correctly for output to map canvas,
-          //       but will be created relative to the SVG's computed size, not the current map canvas
-          QgsRenderContext shdwContext;
-          shdwContext.setMapToPixel( context.mapToPixel() );
-          shdwContext.setScaleFactor( context.scaleFactor() );
-          shdwContext.setPainter( &svgp );
+      component.picture = svgPict;
+      // TODO: when SVG symbol's stroke width/units is fixed in QgsSvgCache, adjust for it here
+      component.pictureBuffer = 0.0;
 
-          QgsSymbolLayer *symShdwL = QgsSvgMarkerSymbolLayer::create( shdwmap );
-          QgsSvgMarkerSymbolLayer *svgShdwM = static_cast<QgsSvgMarkerSymbolLayer *>( symShdwL );
-          QgsSymbolRenderContext svgShdwContext( shdwContext, QgsUnitTypes::RenderUnknownUnit, background.opacity() );
+      component.size = QSizeF( sizeOut, sizeOut );
+      component.offset = QPointF( 0.0, 0.0 );
 
-          svgShdwM->renderPoint( QPointF( sizeOut / 2, -sizeOut / 2 ), svgShdwContext );
-          svgp.end();
-
-          component.picture = svgPict;
-          // TODO: when SVG symbol's stroke width/units is fixed in QgsSvgCache, adjust for it here
-          component.pictureBuffer = 0.0;
-
-          component.size = QSizeF( sizeOut, sizeOut );
-          component.offset = QPointF( 0.0, 0.0 );
-
-          // rotate about origin center of SVG
-          p->save();
-          p->translate( component.center.x(), component.center.y() );
-          p->rotate( component.rotation );
-          double xoff = context.convertToPainterUnits( background.offset().x(), background.offsetUnit(), background.offsetMapUnitScale() );
-          double yoff = context.convertToPainterUnits( background.offset().y(), background.offsetUnit(), background.offsetMapUnitScale() );
-          p->translate( QPointF( xoff, yoff ) );
-          p->rotate( component.rotationOffset );
-          p->translate( -sizeOut / 2, sizeOut / 2 );
-          if ( context.flags() & QgsRenderContext::Antialiasing )
-          {
-            p->setRenderHint( QPainter::Antialiasing );
-          }
-
-          drawShadow( context, component, format );
-          p->restore();
-
-          delete svgShdwM;
-          svgShdwM = nullptr;
-        }
-        renderedSymbol.reset( );
-
-        QgsSymbolLayer *symL = QgsSvgMarkerSymbolLayer::create( map );
-        renderedSymbol.reset( new QgsMarkerSymbol( QgsSymbolLayerList() << symL ) );
-      }
-      else
-      {
-        renderedSymbol.reset( background.markerSymbol()->clone() );
-        renderedSymbol->setSize( sizeOut );
-        renderedSymbol->setSizeUnit( QgsUnitTypes::RenderPixels );
-      }
-
-      renderedSymbol->setOpacity( background.opacity() );
-
-      // draw the actual symbol
+      // rotate about origin center of SVG
       p->save();
-      if ( context.useAdvancedEffects() )
-      {
-        p->setCompositionMode( background.blendMode() );
-      }
-      if ( context.flags() & QgsRenderContext::Antialiasing )
-      {
-        p->setRenderHint( QPainter::Antialiasing );
-      }
       p->translate( component.center.x(), component.center.y() );
       p->rotate( component.rotation );
       double xoff = context.convertToPainterUnits( background.offset().x(), background.offsetUnit(), background.offsetMapUnitScale() );
       double yoff = context.convertToPainterUnits( background.offset().y(), background.offsetUnit(), background.offsetMapUnitScale() );
       p->translate( QPointF( xoff, yoff ) );
       p->rotate( component.rotationOffset );
-
-      const QgsFeature f = context.expressionContext().feature();
-      renderedSymbol->startRender( context, context.expressionContext().fields() );
-      renderedSymbol->renderPoint( QPointF( 0, 0 ), &f, context );
-      renderedSymbol->stopRender( context );
-      p->setCompositionMode( QPainter::CompositionMode_SourceOver ); // just to be sure
-      p->restore();
-
-      break;
-    }
-
-    case QgsTextBackgroundSettings::ShapeRectangle:
-    case QgsTextBackgroundSettings::ShapeCircle:
-    case QgsTextBackgroundSettings::ShapeSquare:
-    case QgsTextBackgroundSettings::ShapeEllipse:
-    {
-      double w = component.size.width();
-      double h = component.size.height();
-
-      if ( background.sizeType() == QgsTextBackgroundSettings::SizeFixed )
-      {
-        w = context.convertToPainterUnits( background.size().width(), background.sizeUnit(),
-                                           background.sizeMapUnitScale() );
-        h = context.convertToPainterUnits( background.size().height(), background.sizeUnit(),
-                                           background.sizeMapUnitScale() );
-      }
-      else if ( background.sizeType() == QgsTextBackgroundSettings::SizeBuffer )
-      {
-        if ( background.type() == QgsTextBackgroundSettings::ShapeSquare )
-        {
-          if ( w > h )
-            h = w;
-          else if ( h > w )
-            w = h;
-        }
-        else if ( background.type() == QgsTextBackgroundSettings::ShapeCircle )
-        {
-          // start with label bound by circle
-          h = std::sqrt( std::pow( w, 2 ) + std::pow( h, 2 ) );
-          w = h;
-        }
-        else if ( background.type() == QgsTextBackgroundSettings::ShapeEllipse )
-        {
-          // start with label bound by ellipse
-          h = h * M_SQRT1_2 * 2;
-          w = w * M_SQRT1_2 * 2;
-        }
-
-        double bufferWidth = context.convertToPainterUnits( background.size().width(), background.sizeUnit(),
-                             background.sizeMapUnitScale() );
-        double bufferHeight = context.convertToPainterUnits( background.size().height(), background.sizeUnit(),
-                              background.sizeMapUnitScale() );
-
-        w += bufferWidth * 2;
-        h += bufferHeight * 2;
-      }
-
-      // offsets match those of symbology: -x = left, -y = up
-      QRectF rect( -w / 2.0, - h / 2.0, w, h );
-
-      if ( rect.isNull() )
-        return;
-
-      p->save();
+      p->translate( -sizeOut / 2, sizeOut / 2 );
       if ( context.flags() & QgsRenderContext::Antialiasing )
       {
         p->setRenderHint( QPainter::Antialiasing );
       }
-      p->translate( QPointF( component.center.x(), component.center.y() ) );
-      p->rotate( component.rotation );
-      double xoff = context.convertToPainterUnits( background.offset().x(), background.offsetUnit(), background.offsetMapUnitScale() );
-      double yoff = context.convertToPainterUnits( background.offset().y(), background.offsetUnit(), background.offsetMapUnitScale() );
-      p->translate( QPointF( xoff, yoff ) );
-      p->rotate( component.rotationOffset );
 
-      double penSize = context.convertToPainterUnits( background.strokeWidth(), background.strokeWidthUnit(), background.strokeWidthMapUnitScale() );
+      drawShadow( context, component, format );
+      p->restore();
 
-      QPen pen;
-      if ( background.strokeWidth() > 0 )
+      delete svgShdwM;
+      svgShdwM = nullptr;
+    }
+
+    // draw the actual symbol
+    QgsSymbolLayer *symL = QgsSvgMarkerSymbolLayer::create( map );
+    QgsSvgMarkerSymbolLayer *svgM = static_cast<QgsSvgMarkerSymbolLayer *>( symL );
+    QgsSymbolRenderContext svgContext( context, QgsUnitTypes::RenderUnknownUnit, background.opacity() );
+
+    p->save();
+    if ( context.useAdvancedEffects() )
+    {
+      p->setCompositionMode( background.blendMode() );
+    }
+    if ( context.flags() & QgsRenderContext::Antialiasing )
+    {
+      p->setRenderHint( QPainter::Antialiasing );
+    }
+    p->translate( component.center.x(), component.center.y() );
+    p->rotate( component.rotation );
+    double xoff = context.convertToPainterUnits( background.offset().x(), background.offsetUnit(), background.offsetMapUnitScale() );
+    double yoff = context.convertToPainterUnits( background.offset().y(), background.offsetUnit(), background.offsetMapUnitScale() );
+    p->translate( QPointF( xoff, yoff ) );
+    p->rotate( component.rotationOffset );
+    svgM->renderPoint( QPointF( 0, 0 ), svgContext );
+    p->setCompositionMode( QPainter::CompositionMode_SourceOver ); // just to be sure
+    p->restore();
+
+    delete svgM;
+    svgM = nullptr;
+
+  }
+  else  // Generated Shapes
+  {
+    double w = component.size.width();
+    double h = component.size.height();
+
+    if ( background.sizeType() == QgsTextBackgroundSettings::SizeFixed )
+    {
+      w = context.convertToPainterUnits( background.size().width(), background.sizeUnit(),
+                                         background.sizeMapUnitScale() );
+      h = context.convertToPainterUnits( background.size().height(), background.sizeUnit(),
+                                         background.sizeMapUnitScale() );
+    }
+    else if ( background.sizeType() == QgsTextBackgroundSettings::SizeBuffer )
+    {
+      if ( background.type() == QgsTextBackgroundSettings::ShapeSquare )
       {
-        pen.setColor( background.strokeColor() );
-        pen.setWidthF( penSize );
-        if ( background.type() == QgsTextBackgroundSettings::ShapeRectangle )
-          pen.setJoinStyle( background.joinStyle() );
+        if ( w > h )
+          h = w;
+        else if ( h > w )
+          w = h;
+      }
+      else if ( background.type() == QgsTextBackgroundSettings::ShapeCircle )
+      {
+        // start with label bound by circle
+        h = std::sqrt( std::pow( w, 2 ) + std::pow( h, 2 ) );
+        w = h;
+      }
+      else if ( background.type() == QgsTextBackgroundSettings::ShapeEllipse )
+      {
+        // start with label bound by ellipse
+        h = h * M_SQRT1_2 * 2;
+        w = w * M_SQRT1_2 * 2;
+      }
+
+      double bufferWidth = context.convertToPainterUnits( background.size().width(), background.sizeUnit(),
+                           background.sizeMapUnitScale() );
+      double bufferHeight = context.convertToPainterUnits( background.size().height(), background.sizeUnit(),
+                            background.sizeMapUnitScale() );
+
+      w += bufferWidth * 2;
+      h += bufferHeight * 2;
+    }
+
+    // offsets match those of symbology: -x = left, -y = up
+    QRectF rect( -w / 2.0, - h / 2.0, w, h );
+
+    if ( rect.isNull() )
+      return;
+
+    p->save();
+    if ( context.flags() & QgsRenderContext::Antialiasing )
+    {
+      p->setRenderHint( QPainter::Antialiasing );
+    }
+    p->translate( QPointF( component.center.x(), component.center.y() ) );
+    p->rotate( component.rotation );
+    double xoff = context.convertToPainterUnits( background.offset().x(), background.offsetUnit(), background.offsetMapUnitScale() );
+    double yoff = context.convertToPainterUnits( background.offset().y(), background.offsetUnit(), background.offsetMapUnitScale() );
+    p->translate( QPointF( xoff, yoff ) );
+    p->rotate( component.rotationOffset );
+
+    double penSize = context.convertToPainterUnits( background.strokeWidth(), background.strokeWidthUnit(), background.strokeWidthMapUnitScale() );
+
+    QPen pen;
+    if ( background.strokeWidth() > 0 )
+    {
+      pen.setColor( background.strokeColor() );
+      pen.setWidthF( penSize );
+      if ( background.type() == QgsTextBackgroundSettings::ShapeRectangle )
+        pen.setJoinStyle( background.joinStyle() );
+    }
+    else
+    {
+      pen = Qt::NoPen;
+    }
+
+    // store painting in QPicture for shadow drawing
+    QPicture shapePict;
+    QPainter shapep;
+    shapep.begin( &shapePict );
+    shapep.setPen( pen );
+    shapep.setBrush( background.fillColor() );
+
+    if ( background.type() == QgsTextBackgroundSettings::ShapeRectangle
+         || background.type() == QgsTextBackgroundSettings::ShapeSquare )
+    {
+      if ( background.radiiUnit() == QgsUnitTypes::RenderPercentage )
+      {
+        shapep.drawRoundedRect( rect, background.radii().width(), background.radii().height(), Qt::RelativeSize );
       }
       else
       {
-        pen = Qt::NoPen;
+        double xRadius = context.convertToPainterUnits( background.radii().width(), background.radiiUnit(), background.radiiMapUnitScale() );
+        double yRadius = context.convertToPainterUnits( background.radii().height(), background.radiiUnit(), background.radiiMapUnitScale() );
+        shapep.drawRoundedRect( rect, xRadius, yRadius );
       }
-
-      // store painting in QPicture for shadow drawing
-      QPicture shapePict;
-      QPainter shapep;
-      shapep.begin( &shapePict );
-      shapep.setPen( pen );
-      shapep.setBrush( background.fillColor() );
-
-      if ( background.type() == QgsTextBackgroundSettings::ShapeRectangle
-           || background.type() == QgsTextBackgroundSettings::ShapeSquare )
-      {
-        if ( background.radiiUnit() == QgsUnitTypes::RenderPercentage )
-        {
-          shapep.drawRoundedRect( rect, background.radii().width(), background.radii().height(), Qt::RelativeSize );
-        }
-        else
-        {
-          double xRadius = context.convertToPainterUnits( background.radii().width(), background.radiiUnit(), background.radiiMapUnitScale() );
-          double yRadius = context.convertToPainterUnits( background.radii().height(), background.radiiUnit(), background.radiiMapUnitScale() );
-          shapep.drawRoundedRect( rect, xRadius, yRadius );
-        }
-      }
-      else if ( background.type() == QgsTextBackgroundSettings::ShapeEllipse
-                || background.type() == QgsTextBackgroundSettings::ShapeCircle )
-      {
-        shapep.drawEllipse( rect );
-      }
-      shapep.end();
-
-      if ( format.shadow().enabled() && format.shadow().shadowPlacement() == QgsTextShadowSettings::ShadowShape )
-      {
-        component.picture = shapePict;
-        component.pictureBuffer = penSize / 2.0;
-
-        component.size = rect.size();
-        component.offset = QPointF( rect.width() / 2, -rect.height() / 2 );
-        drawShadow( context, component, format );
-      }
-
-      p->setOpacity( background.opacity() );
-      if ( context.useAdvancedEffects() )
-      {
-        p->setCompositionMode( background.blendMode() );
-      }
-
-      // scale for any print output or image saving @ specific dpi
-      p->scale( component.dpiRatio, component.dpiRatio );
-      _fixQPictureDPI( p );
-      p->drawPicture( 0, 0, shapePict );
-      p->restore();
-      break;
     }
-  }
+    else if ( background.type() == QgsTextBackgroundSettings::ShapeEllipse
+              || background.type() == QgsTextBackgroundSettings::ShapeCircle )
+    {
+      shapep.drawEllipse( rect );
+    }
+    shapep.end();
 
+    if ( format.shadow().enabled() && format.shadow().shadowPlacement() == QgsTextShadowSettings::ShadowShape )
+    {
+      component.picture = shapePict;
+      component.pictureBuffer = penSize / 2.0;
+
+      component.size = rect.size();
+      component.offset = QPointF( rect.width() / 2, -rect.height() / 2 );
+      drawShadow( context, component, format );
+    }
+
+    p->setOpacity( background.opacity() );
+    if ( context.useAdvancedEffects() )
+    {
+      p->setCompositionMode( background.blendMode() );
+    }
+
+    // scale for any print output or image saving @ specific dpi
+    p->scale( component.dpiRatio, component.dpiRatio );
+    _fixQPictureDPI( p );
+    p->drawPicture( 0, 0, shapePict );
+    p->restore();
+  }
   if ( background.paintEffect() && background.paintEffect()->enabled() )
   {
     background.paintEffect()->end( context );
@@ -3389,86 +2689,3 @@ void QgsTextRenderer::drawTextInternal( TextPart drawType,
   }
 }
 
-
-//
-// QgsTextRendererUtils
-//
-
-QgsTextBackgroundSettings::ShapeType QgsTextRendererUtils::decodeShapeType( const QString &string )
-{
-  QgsTextBackgroundSettings::ShapeType shpkind = QgsTextBackgroundSettings::ShapeRectangle;
-  const QString skind = string.trimmed();
-
-  if ( skind.compare( QLatin1String( "Square" ), Qt::CaseInsensitive ) == 0 )
-  {
-    shpkind = QgsTextBackgroundSettings::ShapeSquare;
-  }
-  else if ( skind.compare( QLatin1String( "Ellipse" ), Qt::CaseInsensitive ) == 0 )
-  {
-    shpkind = QgsTextBackgroundSettings::ShapeEllipse;
-  }
-  else if ( skind.compare( QLatin1String( "Circle" ), Qt::CaseInsensitive ) == 0 )
-  {
-    shpkind = QgsTextBackgroundSettings::ShapeCircle;
-  }
-  else if ( skind.compare( QLatin1String( "SVG" ), Qt::CaseInsensitive ) == 0 )
-  {
-    shpkind = QgsTextBackgroundSettings::ShapeSVG;
-  }
-  else if ( skind.compare( QLatin1String( "marker" ), Qt::CaseInsensitive ) == 0 )
-  {
-    shpkind = QgsTextBackgroundSettings::ShapeMarkerSymbol;
-  }
-  return shpkind;
-}
-
-QgsTextBackgroundSettings::SizeType QgsTextRendererUtils::decodeBackgroundSizeType( const QString &string )
-{
-  const QString stype = string.trimmed();
-  // "Buffer"
-  QgsTextBackgroundSettings::SizeType sizType = QgsTextBackgroundSettings::SizeBuffer;
-
-  if ( stype.compare( QLatin1String( "Fixed" ), Qt::CaseInsensitive ) == 0 )
-  {
-    sizType = QgsTextBackgroundSettings::SizeFixed;
-  }
-  return sizType;
-}
-
-QgsTextBackgroundSettings::RotationType QgsTextRendererUtils::decodeBackgroundRotationType( const QString &string )
-{
-  const QString rotstr = string.trimmed();
-  // "Sync"
-  QgsTextBackgroundSettings::RotationType rottype = QgsTextBackgroundSettings::RotationSync;
-
-  if ( rotstr.compare( QLatin1String( "Offset" ), Qt::CaseInsensitive ) == 0 )
-  {
-    rottype = QgsTextBackgroundSettings::RotationOffset;
-  }
-  else if ( rotstr.compare( QLatin1String( "Fixed" ), Qt::CaseInsensitive ) == 0 )
-  {
-    rottype = QgsTextBackgroundSettings::RotationFixed;
-  }
-  return rottype;
-}
-
-QgsTextShadowSettings::ShadowPlacement QgsTextRendererUtils::decodeShadowPlacementType( const QString &string )
-{
-  const QString str = string.trimmed();
-  // "Lowest"
-  QgsTextShadowSettings::ShadowPlacement shdwtype = QgsTextShadowSettings::ShadowLowest;
-
-  if ( str.compare( QLatin1String( "Text" ), Qt::CaseInsensitive ) == 0 )
-  {
-    shdwtype = QgsTextShadowSettings::ShadowText;
-  }
-  else if ( str.compare( QLatin1String( "Buffer" ), Qt::CaseInsensitive ) == 0 )
-  {
-    shdwtype = QgsTextShadowSettings::ShadowBuffer;
-  }
-  else if ( str.compare( QLatin1String( "Background" ), Qt::CaseInsensitive ) == 0 )
-  {
-    shdwtype = QgsTextShadowSettings::ShadowShape;
-  }
-  return shdwtype;
-}

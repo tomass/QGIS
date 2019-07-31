@@ -33,11 +33,10 @@
 #include "qgis.h"
 #include "pal.h"
 #include "qgsmessagelog.h"
-#include <vector>
 
 using namespace pal;
 
-void heapsort( int *sid, int *id, const std::vector< double > &x, int N )
+void heapsort( int *sid, int *id, const double *const x, int N )
 {
   unsigned int n = N, i = n / 2, parent, child;
   int tx;
@@ -163,7 +162,7 @@ bool GeomFunction::computeLineIntersection( double x1, double y1, double x2, dou
   return true;
 }
 
-int GeomFunction::convexHullId( int *id, const std::vector< double > &x, const std::vector< double > &y, int n, int *&cHull )
+int GeomFunction::convexHullId( int *id, const double *const x, const double *const y, int n, int *&cHull )
 {
   int i;
 
@@ -264,7 +263,7 @@ int GeomFunction::convexHullId( int *id, const std::vector< double > &x, const s
   return top + 1;
 }
 
-int GeomFunction::reorderPolygon( int nbPoints, std::vector<double> &x, std::vector<double> &y )
+int GeomFunction::reorderPolygon( int nbPoints, double *x, double *y )
 {
   int inc = 0;
   int *cHull = nullptr;

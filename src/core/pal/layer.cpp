@@ -51,6 +51,7 @@ Layer::Layer( QgsAbstractLabelProvider *provider, const QString &name, QgsPalLay
   , mDisplayAll( displayAll )
   , mCentroidInside( false )
   , mArrangement( arrangement )
+  , mMode( LabelPerFeature )
   , mMergeLines( false )
   , mUpsidedownLabels( Upright )
 {
@@ -179,7 +180,7 @@ bool Layer::registerFeature( QgsLabelFeature *lf )
       continue;
     }
 
-    if ( !lf->labelAllParts() && ( type == GEOS_POLYGON || type == GEOS_LINESTRING ) )
+    if ( mMode == LabelPerFeature && ( type == GEOS_POLYGON || type == GEOS_LINESTRING ) )
     {
       if ( type == GEOS_LINESTRING )
         GEOSLength_r( geosctxt, geom, &geom_size );
@@ -248,7 +249,7 @@ bool Layer::registerFeature( QgsLabelFeature *lf )
   locker.unlock();
 
   // if using only biggest parts...
-  if ( ( !lf->labelAllParts() || lf->hasFixedPosition() ) && biggest_part )
+  if ( ( mMode == LabelPerFeature || lf->hasFixedPosition() ) && biggest_part )
   {
     addFeaturePart( biggest_part.release(), lf->labelText() );
     addedFeature = true;
@@ -379,51 +380,16 @@ void Layer::chopFeaturesAtRepeatDistance()
   QLinkedList<FeaturePart *> newFeatureParts;
   while ( !mFeatureParts.isEmpty() )
   {
-    std::unique_ptr< FeaturePart > fpart( mFeatureParts.takeFirst() );
+    FeaturePart *fpart = mFeatureParts.takeFirst();
     const GEOSGeometry *geom = fpart->geos();
     double chopInterval = fpart->repeatDistance();
-
-    // whether we CAN chop
-    bool canChop = false;
-    double featureLen = 0;
     if ( chopInterval != 0. && GEOSGeomTypeId_r( geosctxt, geom ) == GEOS_LINESTRING )
     {
-      ( void )GEOSLength_r( geosctxt, geom, &featureLen );
-      if ( featureLen > chopInterval )
-        canChop = true;
-    }
-
-    // whether we SHOULD chop
-    bool shouldChop = canChop;
-    int possibleSegments = 0;
-    if ( canChop )
-    {
-      // never chop into segments smaller than required for the actual label text
       chopInterval *= std::ceil( fpart->getLabelWidth() / fpart->repeatDistance() );
 
-      // now work out how many full segments we could chop this line into
-      possibleSegments = static_cast< int >( std::floor( featureLen / chopInterval ) );
-
-      // ... and use this to work out the actual chop distance for this line. Otherwise, we risk the
-      // situation of:
-      // 1. Line length of 3cm
-      // 2. Repeat distance of 2cm
-      // 3. Label size is 1.5 cm
-      //
-      //      2cm    1cm
-      // /--Label--/----/
-      //
-      // i.e. the labels would be off center and gravitate toward line starts
-      chopInterval = featureLen / possibleSegments;
-
-      shouldChop = possibleSegments > 1;
-    }
-
-    if ( shouldChop )
-    {
       double bmin[2], bmax[2];
       fpart->getBoundingBox( bmin, bmax );
-      mFeatureIndex->Remove( bmin, bmax, fpart.get() );
+      mFeatureIndex->Remove( bmin, bmax, fpart );
 
       const GEOSCoordSequence *cs = GEOSGeom_getCoordSeq_r( geosctxt, geom );
 
@@ -452,11 +418,7 @@ void Layer::chopFeaturesAtRepeatDistance()
       unsigned int cur = 0;
       double lambda = 0;
       QVector<Point> part;
-
-      QList<FeaturePart *> repeatParts;
-      repeatParts.reserve( possibleSegments );
-
-      for ( int segment = 0; segment < possibleSegments; segment++ )
+      for ( ;; )
       {
         lambda += chopInterval;
         for ( ; cur < n && lambda > len[cur]; ++cur )
@@ -465,20 +427,6 @@ void Layer::chopFeaturesAtRepeatDistance()
         }
         if ( cur >= n )
         {
-          // Create final part
-          GEOSCoordSequence *cooSeq = GEOSCoordSeq_create_r( geosctxt, part.size(), 2 );
-          for ( int i = 0; i < part.size(); ++i )
-          {
-            GEOSCoordSeq_setX_r( geosctxt, cooSeq, i, part[i].x );
-            GEOSCoordSeq_setY_r( geosctxt, cooSeq, i, part[i].y );
-          }
-          GEOSGeometry *newgeom = GEOSGeom_createLineString_r( geosctxt, cooSeq );
-          FeaturePart *newfpart = new FeaturePart( fpart->feature(), newgeom );
-          newFeatureParts.append( newfpart );
-          newfpart->getBoundingBox( bmin, bmax );
-          mFeatureIndex->Insert( bmin, bmax, newfpart );
-          repeatParts.push_back( newfpart );
-
           break;
         }
         double c = ( lambda - len[cur - 1] ) / ( len[cur] - len[cur - 1] );
@@ -500,15 +448,26 @@ void Layer::chopFeaturesAtRepeatDistance()
         mFeatureIndex->Insert( bmin, bmax, newfpart );
         part.clear();
         part.push_back( p );
-        repeatParts.push_back( newfpart );
+      }
+      // Create final part
+      part.push_back( points[n - 1] );
+      GEOSCoordSequence *cooSeq = GEOSCoordSeq_create_r( geosctxt, part.size(), 2 );
+      for ( int i = 0; i < part.size(); ++i )
+      {
+        GEOSCoordSeq_setX_r( geosctxt, cooSeq, i, part[i].x );
+        GEOSCoordSeq_setY_r( geosctxt, cooSeq, i, part[i].y );
       }
 
-      for ( FeaturePart *part : repeatParts )
-        part->setTotalRepeats( repeatParts.count() );
+      GEOSGeometry *newgeom = GEOSGeom_createLineString_r( geosctxt, cooSeq );
+      FeaturePart *newfpart = new FeaturePart( fpart->feature(), newgeom );
+      newFeatureParts.append( newfpart );
+      newfpart->getBoundingBox( bmin, bmax );
+      mFeatureIndex->Insert( bmin, bmax, newfpart );
+      delete fpart;
     }
     else
     {
-      newFeatureParts.append( fpart.release() );
+      newFeatureParts.append( fpart );
     }
   }
 

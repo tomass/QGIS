@@ -31,7 +31,7 @@ For the QGIS build you need to install following packages from cygwin:
 
 and from OSGeo4W (select //Advanced Installation//):
 
-- qgis-dev-deps
+- qgis-rel-deps
 -
 
 This will also select packages the above packages depend on.
@@ -103,7 +103,7 @@ Running QGIS from within MSVC:
   Edit the properties of the project ALL_BUILD:
   Debugging -> Command -> D:\OSGeo4W64\QGIS\ms-windows\osgeo4w\build-qgis-test-x86_64\output\bin\RelWithDebInfo\qgis.exe
   Run.
-  Ignore the "These projects are out of date" message, it appears even if no files were changed.
+  Ignore the "These projects are out of date" message, it appeares even if no files were was changed.
 
 
 Old alternative method that might still work using cmake-gui:

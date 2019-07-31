@@ -18,7 +18,6 @@
 #include "qgsproviderregistry.h"
 #include "qgsrasterdataprovider.h"
 #include "qgsrasteridentifyresult.h"
-#include "qgsprovidermetadata.h"
 #include "qgsrasterprojector.h"
 #include "qgslogger.h"
 #include "qgsapplication.h"
@@ -60,7 +59,7 @@ QgsRasterBlock *QgsRasterDataProvider::block( int bandNo, QgsRectangle  const &b
   }
 
   // Read necessary extent only
-  QgsRectangle tmpExtent = boundingBox;
+  QgsRectangle tmpExtent = extent().intersect( boundingBox );
 
   if ( tmpExtent.isEmpty() )
   {
@@ -343,15 +342,27 @@ bool QgsRasterDataProvider::writeBlock( QgsRasterBlock *block, int band, int xOf
   return write( block->bits(), band, block->width(), block->height(), xOffset, yOffset );
 }
 
-// typedef QList<QPair<QString, QString> > *pyramidResamplingMethods_t();
+typedef QList<QPair<QString, QString> > *pyramidResamplingMethods_t();
 QList<QPair<QString, QString> > QgsRasterDataProvider::pyramidResamplingMethods( const QString &providerKey )
 {
-  QList<QPair<QString, QString> > methods = QgsProviderRegistry::instance()->pyramidResamplingMethods( providerKey );
-  if ( methods.isEmpty() )
+  pyramidResamplingMethods_t *pPyramidResamplingMethods = reinterpret_cast< pyramidResamplingMethods_t * >( cast_to_fptr( QgsProviderRegistry::instance()->function( providerKey,  "pyramidResamplingMethods" ) ) );
+  if ( pPyramidResamplingMethods )
   {
-    QgsDebugMsg( QStringLiteral( "provider pyramidResamplingMethods returned no methods" ) );
+    QList<QPair<QString, QString> > *methods = pPyramidResamplingMethods();
+    if ( !methods )
+    {
+      QgsDebugMsg( QStringLiteral( "provider pyramidResamplingMethods returned no methods" ) );
+    }
+    else
+    {
+      return *methods;
+    }
   }
-  return methods;
+  else
+  {
+    QgsDebugMsg( QStringLiteral( "Could not resolve pyramidResamplingMethods provider library" ) );
+  }
+  return QList<QPair<QString, QString> >();
 }
 
 bool QgsRasterDataProvider::hasPyramids()
@@ -405,6 +416,12 @@ void QgsRasterDataProvider::setUserNoDataValue( int bandNo, const QgsRasterRange
   }
 }
 
+typedef QgsRasterDataProvider *createFunction_t( const QString &,
+    const QString &, int,
+    Qgis::DataType,
+    int, int, double *,
+    const QgsCoordinateReferenceSystem &,
+    QStringList );
 
 QgsRasterDataProvider *QgsRasterDataProvider::create( const QString &providerKey,
     const QString &uri,
@@ -414,17 +431,15 @@ QgsRasterDataProvider *QgsRasterDataProvider::create( const QString &providerKey
     const QgsCoordinateReferenceSystem &crs,
     const QStringList &createOptions )
 {
-  QgsRasterDataProvider *ret = QgsProviderRegistry::instance()->createRasterDataProvider(
-                                 providerKey,
-                                 uri, format,
-                                 nBands, type, width,
-                                 height, geoTransform, crs, createOptions );
-  if ( !ret )
-    QgsDebugMsg( "Cannot resolve 'createRasterDataProviderFunction' function in " + providerKey + " provider" );
-  // TODO: it would be good to return invalid QgsRasterDataProvider
-  // with QgsError set, but QgsRasterDataProvider has pure virtual methods
-
-  return ret;
+  createFunction_t *createFn = reinterpret_cast< createFunction_t * >( cast_to_fptr( QgsProviderRegistry::instance()->function( providerKey, "create" ) ) );
+  if ( !createFn )
+  {
+    QgsDebugMsg( "Cannot resolve 'create' function in " + providerKey + " provider" );
+    // TODO: it would be good to return invalid QgsRasterDataProvider
+    // with QgsError set, but QgsRasterDataProvider has pure virtual methods
+    return nullptr;
+  }
+  return createFn( uri, format, nBands, type, width, height, geoTransform, crs, createOptions );
 }
 
 QString QgsRasterDataProvider::identifyFormatName( QgsRaster::IdentifyFormat format )
@@ -490,11 +505,6 @@ QgsRasterInterface::Capability QgsRasterDataProvider::identifyFormatToCapability
 QList<double> QgsRasterDataProvider::nativeResolutions() const
 {
   return QList< double >();
-}
-
-bool QgsRasterDataProvider::ignoreExtents() const
-{
-  return false;
 }
 
 bool QgsRasterDataProvider::userNoDataValuesContains( int bandNo, double value ) const

@@ -15,11 +15,11 @@
  ***************************************************************************/
 #include "qgssourceselectprovider.h"
 #include "qgssourceselectproviderregistry.h"
-#include "qgsproviderguiregistry.h"
+#include "qgsproviderregistry.h"
 
 #include <memory>
 
-QgsSourceSelectProviderRegistry::QgsSourceSelectProviderRegistry() = default;
+typedef QList<QgsSourceSelectProvider *> *sourceSelectProviders_t();
 
 QgsSourceSelectProviderRegistry::~QgsSourceSelectProviderRegistry()
 {
@@ -28,6 +28,7 @@ QgsSourceSelectProviderRegistry::~QgsSourceSelectProviderRegistry()
 
 QList<QgsSourceSelectProvider *> QgsSourceSelectProviderRegistry::providers()
 {
+  init();
   return mProviders;
 }
 
@@ -49,24 +50,6 @@ bool QgsSourceSelectProviderRegistry::removeProvider( QgsSourceSelectProvider *p
     return true;
   }
   return false;
-}
-
-
-void QgsSourceSelectProviderRegistry::initializeFromProviderGuiRegistry( QgsProviderGuiRegistry *providerGuiRegistry )
-{
-  if ( !providerGuiRegistry )
-    return;
-
-  const QStringList providersList = providerGuiRegistry->providerList();
-  for ( const QString &key : providersList )
-  {
-    const QList<QgsSourceSelectProvider *> providerList = providerGuiRegistry->sourceSelectProviders( key );
-    // the function is a factory - we keep ownership of the returned providers
-    for ( auto provider : providerList )
-    {
-      addProvider( provider );
-    }
-  }
 }
 
 QgsSourceSelectProvider *QgsSourceSelectProviderRegistry::providerByName( const QString &name )
@@ -96,16 +79,31 @@ QList<QgsSourceSelectProvider *> QgsSourceSelectProviderRegistry::providersByKey
   return result;
 }
 
-QgsAbstractDataSourceWidget *QgsSourceSelectProviderRegistry::createSelectionWidget(
-  const QString &name,
-  QWidget *parent,
-  Qt::WindowFlags fl,
-  QgsProviderRegistry::WidgetMode widgetMode )
+void QgsSourceSelectProviderRegistry::init()
 {
-  QgsSourceSelectProvider *provider = providerByName( name );
-  if ( !provider )
+  if ( mInitialized )
   {
-    return nullptr;
+    return;
   }
-  return provider->createDataSourceWidget( parent, fl, widgetMode );
+  const QStringList providersList = QgsProviderRegistry::instance()->providerList();
+  for ( const QString &key : providersList )
+  {
+    std::unique_ptr< QLibrary > library( QgsProviderRegistry::instance()->createProviderLibrary( key ) );
+    if ( !library )
+      continue;
+
+    sourceSelectProviders_t *sourceSelectProvidersFn = reinterpret_cast< sourceSelectProviders_t * >( cast_to_fptr( library->resolve( "sourceSelectProviders" ) ) );
+    if ( sourceSelectProvidersFn )
+    {
+      QList<QgsSourceSelectProvider *> *providerList = sourceSelectProvidersFn();
+      // the function is a factory - we keep ownership of the returned providers
+      for ( auto provider : qgis::as_const( *providerList ) )
+      {
+        addProvider( provider );
+      }
+      delete providerList;
+    }
+  }
+  mInitialized = true;
 }
+

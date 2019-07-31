@@ -32,7 +32,6 @@
 #include "qgsfontutils.h"
 #include "qgsunittypes.h"
 #include "qgssettings.h"
-#include "qgsstyleentityvisitor.h"
 
 #include <QDomDocument>
 #include <QDomElement>
@@ -337,20 +336,6 @@ QgsScaleBarRenderer::ScaleBarContext QgsLayoutItemScaleBar::createScaleContext()
   scaleContext.segmentWidth = mSegmentMillimeters;
   scaleContext.scale = mMap ? mMap->scale() : 1.0;
   return scaleContext;
-}
-
-void QgsLayoutItemScaleBar::setLabelVerticalPlacement( QgsScaleBarSettings::LabelVerticalPlacement placement )
-{
-  mSettings.setLabelVerticalPlacement( placement );
-  refreshItemSize();
-  emit changed();
-}
-
-void QgsLayoutItemScaleBar::setLabelHorizontalPlacement( QgsScaleBarSettings::LabelHorizontalPlacement placement )
-{
-  mSettings.setLabelHorizontalPlacement( placement );
-  refreshItemSize();
-  emit changed();
 }
 
 void QgsLayoutItemScaleBar::setAlignment( QgsScaleBarSettings::Alignment a )
@@ -663,10 +648,6 @@ bool QgsLayoutItemScaleBar::writePropertiesToElement( QDomElement &composerScale
   strokeColorElem.setAttribute( QStringLiteral( "alpha" ), QString::number( mSettings.lineColor().alpha() ) );
   composerScaleBarElem.appendChild( strokeColorElem );
 
-  //label vertical/horizontal placement
-  composerScaleBarElem.setAttribute( QStringLiteral( "labelVerticalPlacement" ), QString::number( static_cast< int >( mSettings.labelVerticalPlacement() ) ) );
-  composerScaleBarElem.setAttribute( QStringLiteral( "labelHorizontalPlacement" ), QString::number( static_cast< int >( mSettings.labelHorizontalPlacement() ) ) );
-
   //alignment
   composerScaleBarElem.setAttribute( QStringLiteral( "alignment" ), QString::number( static_cast< int >( mSettings.alignment() ) ) );
 
@@ -846,10 +827,6 @@ bool QgsLayoutItemScaleBar::readPropertiesFromElement( const QDomElement &itemEl
   {
     mSettings.setUnits( QgsUnitTypes::decodeDistanceUnit( itemElem.attribute( QStringLiteral( "unitType" ) ) ) );
   }
-
-  mSettings.setLabelVerticalPlacement( static_cast< QgsScaleBarSettings::LabelVerticalPlacement >( itemElem.attribute( QStringLiteral( "labelVerticalPlacement" ), QStringLiteral( "0" ) ).toInt() ) );
-  mSettings.setLabelHorizontalPlacement( static_cast< QgsScaleBarSettings::LabelHorizontalPlacement >( itemElem.attribute( QStringLiteral( "labelHorizontalPlacement" ), QStringLiteral( "0" ) ).toInt() ) );
-
   mSettings.setAlignment( static_cast< QgsScaleBarSettings::Alignment >( itemElem.attribute( QStringLiteral( "alignment" ), QStringLiteral( "0" ) ).toInt() ) );
 
   //map
@@ -874,13 +851,4 @@ void QgsLayoutItemScaleBar::finalizeRestoreFromXml()
   }
 
   updateScale();
-}
-
-bool QgsLayoutItemScaleBar::accept( QgsStyleEntityVisitorInterface *visitor ) const
-{
-  QgsStyleTextFormatEntity entity( mSettings.textFormat() );
-  if ( !visitor->visit( QgsStyleEntityVisitorInterface::StyleLeaf( &entity, uuid(), displayName() ) ) )
-    return false;
-
-  return true;
 }

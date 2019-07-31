@@ -29,7 +29,6 @@
 #include "qgslogger.h"
 #include "qgswkbtypes.h"
 
-#include <gdal.h>
 #include <ogr_api.h>
 
 // Version constants
@@ -226,16 +225,8 @@ bool qgsVariantGreaterThan( const QVariant &lhs, const QVariant &rhs )
 
 QString qgsVsiPrefix( const QString &path )
 {
-  if ( path.startsWith( QLatin1String( "/vsizip/" ), Qt::CaseInsensitive ) )
-    return QStringLiteral( "/vsizip/" );
-  else if ( path.endsWith( QLatin1String( ".shp.zip" ), Qt::CaseInsensitive ) )
-  {
-    // GDAL 3.1 Shapefile driver directly handles .shp.zip files
-    if ( GDALIdentifyDriver( path.toUtf8().constData(), nullptr ) )
-      return QString();
-    return QStringLiteral( "/vsizip/" );
-  }
-  else if ( path.endsWith( QLatin1String( ".zip" ), Qt::CaseInsensitive ) )
+  if ( path.startsWith( QLatin1String( "/vsizip/" ), Qt::CaseInsensitive ) ||
+       path.endsWith( QLatin1String( ".zip" ), Qt::CaseInsensitive ) )
     return QStringLiteral( "/vsizip/" );
   else if ( path.startsWith( QLatin1String( "/vsitar/" ), Qt::CaseInsensitive ) ||
             path.endsWith( QLatin1String( ".tar" ), Qt::CaseInsensitive ) ||

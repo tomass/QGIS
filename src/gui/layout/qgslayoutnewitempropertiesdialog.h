@@ -96,9 +96,6 @@ class GUI_EXPORT QgsLayoutItemPropertiesDialog : public QDialog, private Ui::Qgs
 
     QgsLayout *mLayout = nullptr;
 
-  private slots:
-    void showHelp();
-
 };
 
 #endif // QGSLAYOUTNEWITEMPROPERTIESDIALOG_H

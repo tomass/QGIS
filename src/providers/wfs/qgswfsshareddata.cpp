@@ -337,9 +337,23 @@ bool QgsWFSSharedData::createCache()
       tempFile.open();
       tempFile.setAutoRemove( false );
       tempFile.close();
+      QString spatialite_lib = QgsProviderRegistry::instance()->library( QStringLiteral( "spatialite" ) );
+      QLibrary *myLib = new QLibrary( spatialite_lib );
+      bool loaded = myLib->load();
+      bool created = false;
+      if ( loaded )
+      {
+        QgsDebugMsgLevel( QStringLiteral( "SpatiaLite provider loaded" ), 4 );
 
-      QString errCause;
-      bool created = QgsProviderRegistry::instance()->createDb( QStringLiteral( "spatialite" ), tempFile.fileName(), errCause );
+        typedef bool ( *createDbProc )( const QString &, QString & );
+        createDbProc createDbPtr = ( createDbProc ) cast_to_fptr( myLib->resolve( "createDb" ) );
+        if ( createDbPtr )
+        {
+          QString errCause;
+          created = createDbPtr( tempFile.fileName(), errCause );
+        }
+      }
+      delete myLib;
       if ( !created )
       {
         QgsMessageLog::logMessage( tr( "Cannot create temporary SpatiaLite cache" ), tr( "WFS" ) );

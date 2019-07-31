@@ -24,7 +24,6 @@
 #include <QPen>
 #include <QPolygon>
 #include <QObject>
-#include <QSvgRenderer>
 
 #include "qgis_gui.h"
 
@@ -94,12 +93,6 @@ class GUI_EXPORT QgsRubberBand : public QObject, public QgsMapCanvasItem
        * \since QGIS 3.0
        */
       ICON_FULL_DIAMOND,
-
-      /**
-       * An svg image is used to highlight points
-       * \since QGIS 3.10
-       */
-      ICON_SVG
     };
 
     /**
@@ -172,15 +165,6 @@ class GUI_EXPORT QgsRubberBand : public QObject, public QgsMapCanvasItem
      *  \param icon The icon to visualize point geometries
      */
     void setIcon( IconType icon );
-
-    /**
-     * Set the path to the svg file to use to draw points.
-     * Calling this function automatically calls setIcon(ICON_SVG)
-     * \param path The path to the svg
-     * \param drawOffset The offset where to draw the image origin
-     * \since QGIS 3.10
-     */
-    void setSvgIcon( const QString &path, QPoint drawOffset );
 
 
     /**
@@ -378,8 +362,6 @@ class GUI_EXPORT QgsRubberBand : public QObject, public QgsMapCanvasItem
 
     //! Icon to be shown.
     IconType mIconType = ICON_CIRCLE;
-    std::unique_ptr<QSvgRenderer> mSvgRenderer;
-    QPoint mSvgOffset;
 
     /**
      * Nested lists used for multitypes

@@ -61,11 +61,3 @@ void QgsAbstractDataSourceWidget::setMapCanvas( const QgsMapCanvas *mapCanvas )
   mMapCanvas = mapCanvas;
 }
 
-void QgsAbstractDataSourceWidget::addButtonClicked()
-{
-}
-
-void QgsAbstractDataSourceWidget::reset()
-{
-}
-

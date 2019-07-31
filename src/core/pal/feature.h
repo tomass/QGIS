@@ -129,12 +129,13 @@ namespace pal
 
       /**
        * Generic method to generate label candidates for the feature.
+       * \param lPos pointer to an array of candidates, will be filled by generated candidates
        * \param mapBoundary map boundary geometry
        * \param mapShape generate candidates for this spatial entity
        * \param candidates index for candidates
-       * \returns a list of generated candidates positions
+       * \returns the number of candidates generated in lPos
        */
-      QList<LabelPosition *> createCandidates( const GEOSPreparedGeometry *mapBoundary, PointSet *mapShape, RTree<LabelPosition *, double, 2, double> *candidates );
+      int createCandidates( QList<LabelPosition *> &lPos, const GEOSPreparedGeometry *mapBoundary, PointSet *mapShape, RTree<LabelPosition *, double, 2, double> *candidates );
 
       /**
        * Generate candidates for point feature, located around a specified point.
@@ -157,14 +158,6 @@ namespace pal
       int createCandidatesOverPoint( double x, double y, QList<LabelPosition *> &lPos, double angle );
 
       /**
-       * Creates a single candidate using the "point on sruface" algorithm.
-       *
-       * \note Unlike the other create candidates methods, this method
-       * bypasses the usual candidate filtering steps and ALWAYS returns a single candidate.
-       */
-      std::unique_ptr< LabelPosition > createCandidatePointOnSurface( PointSet *mapShape );
-
-      /**
        * Generates candidates following a prioritized list of predefined positions around a point.
        * \param x x coordinate of the point
        * \param y y coordinate of the point
@@ -178,10 +171,9 @@ namespace pal
        * Generate candidates for line feature.
        * \param lPos pointer to an array of candidates, will be filled by generated candidates
        * \param mapShape a pointer to the line
-       * \param allowOverrun set to TRUE to allow labels to overrun features
        * \returns the number of generated candidates
        */
-      int createCandidatesAlongLine( QList<LabelPosition *> &lPos, PointSet *mapShape, bool allowOverrun = false );
+      int createCandidatesAlongLine( QList<LabelPosition *> &lPos, PointSet *mapShape );
 
       /**
        * Generate candidates for line feature, by trying to place candidates towards the middle of the longest
@@ -220,10 +212,9 @@ namespace pal
        * Generate curved candidates for line features.
        * \param lPos pointer to an array of candidates, will be filled by generated candidates
        * \param mapShape a pointer to the line
-       * \param allowOverrun set to TRUE to allow labels to overrun features
        * \returns the number of generated candidates
        */
-      int createCurvedCandidatesAlongLine( QList<LabelPosition *> &lPos, PointSet *mapShape, bool allowOverrun = false );
+      int createCurvedCandidatesAlongLine( QList<LabelPosition *> &lPos, PointSet *mapShape );
 
       /**
        * Generate candidates for polygon features.
@@ -309,18 +300,6 @@ namespace pal
       bool nextCharPosition( double charWidth, double segmentLength, PointSet *path_positions, int &index, double &currentDistanceAlongSegment,
                              double &characterStartX, double &characterStartY, double &characterEndX, double &characterEndY ) const;
 
-      /**
-       * Returns the total number of repeating labels associated with this label.
-       * \see setTotalRepeats()
-       */
-      int totalRepeats() const;
-
-      /**
-       * Returns the total number of repeating labels associated with this label.
-       * \see totalRepeats()
-       */
-      void setTotalRepeats( int repeats );
-
     protected:
 
       QgsLabelFeature *mLF = nullptr;
@@ -332,8 +311,6 @@ namespace pal
     private:
 
       LabelPosition::Quadrant quadrantFromOffset() const;
-
-      int mTotalRepeats = 0;
   };
 
 } // end namespace pal

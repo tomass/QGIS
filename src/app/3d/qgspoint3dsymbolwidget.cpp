@@ -229,7 +229,6 @@ void QgsPoint3DSymbolWidget::onShapeChanged()
              << labelLength << spinLength
              << labelModel << lineEditModel << btnModel << cbOverwriteMaterial;
 
-  widgetMaterial->setEnabled( true );
   QList<QWidget *> activeWidgets;
   switch ( cboShape->currentIndex() )
   {
@@ -253,7 +252,6 @@ void QgsPoint3DSymbolWidget::onShapeChanged()
       break;
     case 6:  // 3d model
       activeWidgets << labelModel << lineEditModel << btnModel << cbOverwriteMaterial;
-      widgetMaterial->setEnabled( cbOverwriteMaterial->isChecked() );
       break;
   }
 

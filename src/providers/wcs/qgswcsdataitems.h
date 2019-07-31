@@ -18,7 +18,6 @@
 #include "qgsdataitem.h"
 #include "qgsdatasourceuri.h"
 #include "qgswcscapabilities.h"
-#include "qgsdataitemprovider.h"
 
 class QgsWCSConnectionItem : public QgsDataCollectionItem
 {
@@ -29,8 +28,18 @@ class QgsWCSConnectionItem : public QgsDataCollectionItem
     QVector<QgsDataItem *> createChildren() override;
     bool equal( const QgsDataItem *other ) override;
 
+#ifdef HAVE_GUI
+    QList<QAction *> actions( QWidget *parent ) override;
+#endif
+
     QgsWcsCapabilities mWcsCapabilities;
     QVector<QgsWcsCoverageSummary> mLayerProperties;
+
+  public slots:
+#ifdef HAVE_GUI
+    void editConnection();
+    void deleteConnection();
+#endif
 
   private:
     QString mUri;
@@ -64,24 +73,15 @@ class QgsWCSRootItem : public QgsDataCollectionItem
     QVariant sortKey() const override { return 9; }
 
 #ifdef HAVE_GUI
+    QList<QAction *> actions( QWidget *parent ) override;
     QWidget *paramWidget() override;
 #endif
 
   public slots:
 #ifdef HAVE_GUI
     void onConnectionsChanged();
+    void newConnection();
 #endif
-};
-
-//! Provider for WCS root data item
-class QgsWcsDataItemProvider : public QgsDataItemProvider
-{
-  public:
-    QString name() override;
-
-    int capabilities() const override;
-
-    QgsDataItem *createDataItem( const QString &pathIn, QgsDataItem *parentItem ) override;
 };
 
 #endif // QGSWCSDATAITEMS_H

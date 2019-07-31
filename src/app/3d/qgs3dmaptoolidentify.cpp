@@ -15,7 +15,6 @@
 
 #include "qgs3dmaptoolidentify.h"
 
-#include "qgsapplication.h"
 #include "qgs3dmapcanvas.h"
 #include "qgs3dmapscene.h"
 #include "qgs3dutils.h"
@@ -36,24 +35,21 @@ class Qgs3DMapToolIdentifyPickHandler : public Qgs3DMapScenePickHandler
 {
   public:
     Qgs3DMapToolIdentifyPickHandler( Qgs3DMapToolIdentify *identifyTool ): mIdentifyTool( identifyTool ) {}
-    void handlePickOnVectorLayer( QgsVectorLayer *vlayer, QgsFeatureId id, const QVector3D &worldIntersection, Qt3DRender::QPickEvent *event ) override;
+    void handlePickOnVectorLayer( QgsVectorLayer *vlayer, QgsFeatureId id, const QVector3D &worldIntersection ) override;
   private:
     Qgs3DMapToolIdentify *mIdentifyTool = nullptr;
 };
 
 
-void Qgs3DMapToolIdentifyPickHandler::handlePickOnVectorLayer( QgsVectorLayer *vlayer, QgsFeatureId id, const QVector3D &worldIntersection, Qt3DRender::QPickEvent *event )
+void Qgs3DMapToolIdentifyPickHandler::handlePickOnVectorLayer( QgsVectorLayer *vlayer, QgsFeatureId id, const QVector3D &worldIntersection )
 {
-  if ( event->button() == Qt3DRender::QPickEvent::LeftButton )
-  {
-    QgsVector3D mapCoords = Qgs3DUtils::worldToMapCoordinates( QgsVector3D( worldIntersection.x(),
-                            worldIntersection.y(),
-                            worldIntersection.z() ), mIdentifyTool->mCanvas->map()->origin() );
-    QgsPoint pt( mapCoords.x(), mapCoords.y(), mapCoords.z() );
+  QgsVector3D mapCoords = Qgs3DUtils::worldToMapCoordinates( QgsVector3D( worldIntersection.x(),
+                          worldIntersection.y(),
+                          worldIntersection.z() ), mIdentifyTool->mCanvas->map()->origin() );
+  QgsPoint pt( mapCoords.x(), mapCoords.y(), mapCoords.z() );
 
-    QgsMapToolIdentifyAction *identifyTool2D = QgisApp::instance()->identifyMapTool();
-    identifyTool2D->showResultsForFeature( vlayer, id, pt );
-  }
+  QgsMapToolIdentifyAction *identifyTool2D = QgisApp::instance()->identifyMapTool();
+  identifyTool2D->showResultsForFeature( vlayer, id, pt );
 }
 
 
@@ -97,11 +93,6 @@ void Qgs3DMapToolIdentify::deactivate()
   }
 
   mCanvas->scene()->unregisterPickHandler( mPickHandler.get() );
-}
-
-QCursor Qgs3DMapToolIdentify::cursor() const
-{
-  return QgsApplication::getThemeCursor( QgsApplication::Cursor::Identify );
 }
 
 void Qgs3DMapToolIdentify::onTerrainPicked( Qt3DRender::QPickEvent *event )

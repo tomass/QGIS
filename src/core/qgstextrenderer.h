@@ -34,8 +34,6 @@ class QgsTextShadowSettingsPrivate;
 class QgsTextSettingsPrivate;
 class QgsVectorLayer;
 class QgsPaintEffect;
-class QgsMarkerSymbol;
-class QgsPropertyCollection;
 
 /**
  * \class QgsTextBufferSettings
@@ -44,6 +42,7 @@ class QgsPropertyCollection;
   * \note QgsTextBufferSettings objects are implicitly shared.
   * \since QGIS 3.0
  */
+
 class CORE_EXPORT QgsTextBufferSettings
 {
   public:
@@ -226,12 +225,6 @@ class CORE_EXPORT QgsTextBufferSettings
      */
     void setPaintEffect( QgsPaintEffect *effect SIP_TRANSFER );
 
-    /**
-     * Updates the format by evaluating current values of data defined properties.
-     * \since QGIS 3.10
-     */
-    void updateDataDefinedProperties( QgsRenderContext &context, const QgsPropertyCollection &properties );
-
   private:
 
     QSharedDataPointer<QgsTextBufferSettingsPrivate> d;
@@ -259,8 +252,7 @@ class CORE_EXPORT QgsTextBackgroundSettings
       ShapeSquare, //!< Square - buffered sizes only
       ShapeEllipse, //!< Ellipse
       ShapeCircle, //!< Circle
-      ShapeSVG, //!< SVG file
-      ShapeMarkerSymbol, //!< Marker symbol
+      ShapeSVG //!< SVG file
     };
 
     /**
@@ -334,24 +326,6 @@ class CORE_EXPORT QgsTextBackgroundSettings
      * \see svgFile()
      */
     void setSvgFile( const QString &file );
-
-    /**
-     * Returns the marker symbol to be rendered in the background. Ownership remains with
-     * the background settings.
-     * \note This is only used when the type() is QgsTextBackgroundSettings::ShapeMarkerSymbol.
-     * \see setMarkerSymbol()
-     * \since QGIS 3.10
-     */
-    QgsMarkerSymbol *markerSymbol() const;
-
-    /**
-     * Sets the current marker \a symbol for the background shape. Ownership is transferred
-     * to the background settings.
-     * \note This is only used when the type() is QgsTextBackgroundSettings::ShapeMarkerSymbol.
-     * \see markerSymbol()
-     * \since QGIS 3.10
-     */
-    void setMarkerSymbol( QgsMarkerSymbol *symbol SIP_TRANSFER );
 
     /**
      * Returns the method used to determine the size of the background shape (e.g., fixed size or buffer
@@ -706,12 +680,6 @@ class CORE_EXPORT QgsTextBackgroundSettings
      */
     QDomElement writeXml( QDomDocument &doc, const QgsReadWriteContext &context ) const;
 
-    /**
-     * Updates the format by evaluating current values of data defined properties.
-     * \since QGIS 3.10
-     */
-    void updateDataDefinedProperties( QgsRenderContext &context, const QgsPropertyCollection &properties );
-
   private:
 
     QSharedDataPointer<QgsTextBackgroundSettingsPrivate> d;
@@ -992,12 +960,6 @@ class CORE_EXPORT QgsTextShadowSettings
      */
     QDomElement writeXml( QDomDocument &doc ) const;
 
-    /**
-     * Updates the format by evaluating current values of data defined properties.
-     * \since QGIS 3.10
-     */
-    void updateDataDefinedProperties( QgsRenderContext &context, const QgsPropertyCollection &properties );
-
   private:
 
     QSharedDataPointer<QgsTextShadowSettingsPrivate> d;
@@ -1240,20 +1202,6 @@ class CORE_EXPORT QgsTextFormat
     void setLineHeight( double height );
 
     /**
-     * Returns the background color for text previews.
-     * \see setPreviewBackgroundColor()
-     * \since QGIS 3.10
-     */
-    QColor previewBackgroundColor() const;
-
-    /**
-     * Sets the background \a color that text will be rendered on for previews.
-     * \see previewBackgroundColor()
-     * \since QGIS 3.10
-     */
-    void setPreviewBackgroundColor( const QColor &color );
-
-    /**
      * Reads settings from a layer's custom properties (for QGIS 2.x projects).
      * \param layer source vector layer
      */
@@ -1323,45 +1271,6 @@ class CORE_EXPORT QgsTextFormat
      * \see fontFound()
      */
     QString resolvedFontFamily() const { return mTextFontFamily; }
-
-    /**
-     * Returns a reference to the format's property collection, used for data defined overrides.
-     * \see setDataDefinedProperties()
-     * \since QGIS 3.10
-     */
-    QgsPropertyCollection &dataDefinedProperties();
-
-    /**
-     * Returns a reference to the format's property collection, used for data defined overrides.
-     * \see setDataDefinedProperties()
-     * \note not available in Python bindings
-     * \since QGIS 3.10
-     */
-    const QgsPropertyCollection &dataDefinedProperties() const SIP_SKIP;
-
-    /**
-     * Sets the format's property collection, used for data defined overrides.
-     * \param collection property collection. Existing properties will be replaced.
-     * \see dataDefinedProperties()
-     * \since QGIS 3.10
-     */
-    void setDataDefinedProperties( const QgsPropertyCollection &collection );
-
-    /**
-     * Updates the format by evaluating current values of data defined properties.
-     * \since QGIS 3.10
-     */
-    void updateDataDefinedProperties( QgsRenderContext &context );
-
-    /**
-    * Returns a pixmap preview for a text \a format.
-    * \param format text format
-    * \param size target pixmap size
-    * \param previewText text to render in preview, or empty for default text
-    * \param padding space between icon edge and color ramp
-    * \since QGIS 3.10
-    */
-    static QPixmap textFormatPreviewPixmap( const QgsTextFormat &format, QSize size, const QString &previewText = QString(), int padding = 0 );
 
   private:
 
@@ -1596,38 +1505,5 @@ class CORE_EXPORT QgsTextRenderer
 
 
 };
-
-/**
- * \class QgsTextRendererUtils
-  * \ingroup core
-  * Utility functions for text rendering.
-  * \since QGIS 3.10
- */
-class CORE_EXPORT QgsTextRendererUtils
-{
-  public:
-
-    /**
-     * Decodes a string representation of a background shape type to a type.
-     */
-    static QgsTextBackgroundSettings::ShapeType decodeShapeType( const QString &string );
-
-    /**
-     * Decodes a string representation of a background size type to a type.
-     */
-    static QgsTextBackgroundSettings::SizeType decodeBackgroundSizeType( const QString &string );
-
-    /**
-     * Decodes a string representation of a background rotation type to a type.
-     */
-    static QgsTextBackgroundSettings::RotationType decodeBackgroundRotationType( const QString &string );
-
-    /**
-     * Decodes a string representation of a shadow placement type to a type.
-     */
-    static QgsTextShadowSettings::ShadowPlacement decodeShadowPlacementType( const QString &string );
-
-};
-
 
 #endif // QGSTEXTRENDERER_H

@@ -17,7 +17,6 @@
 #include "qgssettings.h"
 #include "qgslayout.h"
 #include "qgslayoutpagecollection.h"
-#include "qgshelp.h"
 #include "qgsgui.h"
 
 #include <QButtonGroup>
@@ -55,8 +54,6 @@ QgsLayoutItemPropertiesDialog::QgsLayoutItemPropertiesDialog( QWidget *parent, Q
 
   mLockAspectRatio->setWidthSpinBox( mWidthSpin );
   mLockAspectRatio->setHeightSpinBox( mHeightSpin );
-
-  connect( buttonBox, &QDialogButtonBox::helpRequested, this, &QgsLayoutItemPropertiesDialog::showHelp );
 }
 
 void QgsLayoutItemPropertiesDialog::setItemPosition( QgsLayoutPoint position )
@@ -184,9 +181,4 @@ void QgsLayoutItemPropertiesDialog::setLayout( QgsLayout *layout )
   mSizeUnitsComboBox->setConverter( &layout->renderContext().measurementConverter() );
   mPosUnitsComboBox->setConverter( &layout->renderContext().measurementConverter() );
   mLayout = layout;
-}
-
-void QgsLayoutItemPropertiesDialog::showHelp()
-{
-  QgsHelp::openHelp( QStringLiteral( "print_composer/composer_items/composer_items_options.html#creating-a-layout-item" ) );
 }

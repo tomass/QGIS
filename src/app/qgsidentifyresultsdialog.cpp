@@ -80,8 +80,7 @@
 #include "qgsgui.h"
 #include "qgsexpressioncontextutils.h"
 #include "qgsidentifymenu.h"
-#include "qgsjsonutils.h"
-#include <nlohmann/json.hpp>
+
 
 QgsIdentifyResultsWebView::QgsIdentifyResultsWebView( QWidget *parent ) : QgsWebView( parent )
 {
@@ -199,7 +198,7 @@ QgsWebView *QgsIdentifyResultsWebView::createWindow( QWebPage::WebWindowType typ
 //    widget (until the QTreeWidget itself is large enough to show the whole
 //    inserted widget).  => We have to keep the height of QgsIdentifyResultsWebView smaller
 //    than the height of QTreeWidget so that a user can see it entire, even if
-//    this height is smaller than QgsIdentifyResultsWebView content (i.e. QgsIdentifyResultsWebView scrollbar
+//    this height is smaller than QgsIdentifyResultsWebView content (i.e. QgsIdentifyResultsWebView scroolbar
 //    is added). We make it even a bit smaller so that a user can see a bit of
 //    context (items above/below) when scrolling which is more pleasant.
 //
@@ -908,13 +907,9 @@ void QgsIdentifyResultsDialog::addFeature( QgsRasterLayer *layer,
             formattedValue =  QLocale().toString( val, 'f', 0 );
           }
         }
-        else if ( ! formattedValue.isEmpty() )
-        {
-          isString = true;
-        }
         else
         {
-          formattedValue = QString::fromStdString( QgsJsonUtils::jsonFromVariant( value ).dump() );
+          isString = true;
         }
       }
       QTreeWidgetItem *attrItem = new QTreeWidgetItem( { fields.at( i ).name(), formattedValue } );

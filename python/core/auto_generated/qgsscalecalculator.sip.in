@@ -57,7 +57,7 @@ Set the map units
 Returns current map units
 %End
 
-    double calculate( const QgsRectangle &mapExtent, double canvasWidth ) const;
+    double calculate( const QgsRectangle &mapExtent, double canvasWidth );
 %Docstring
 Calculate the scale denominator
 
@@ -67,7 +67,7 @@ Calculate the scale denominator
 :return: scale denominator of current map view, e.g. 1000.0 for a 1:1000 map.
 %End
 
-    double calculateGeographicDistance( const QgsRectangle &mapExtent ) const;
+    double calculateGeographicDistance( const QgsRectangle &mapExtent );
 %Docstring
 Calculate the distance between two points in geographic coordinates.
 Used to calculate scale for map views with geographic (decimal degree)

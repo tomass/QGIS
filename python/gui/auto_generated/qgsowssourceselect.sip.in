@@ -38,14 +38,15 @@ layers from the WCS server to the map canvas.
 Constructor
 %End
 
+    ~QgsOWSSourceSelect();
+
+  public slots:
+
     virtual void refresh();
 
 %Docstring
 Triggered when the provider's connections need to be refreshed
 %End
-
-    virtual void reset();
-
 
   protected slots:
     void showError( const QString &title, const QString &format, const QString &error );

@@ -35,21 +35,18 @@ Constructor for QgsNetworkContentFetcher.
 
     ~QgsNetworkContentFetcher();
 
-    void fetchContent( const QUrl &url, const QString &authcfg = QString() );
+    void fetchContent( const QUrl &url );
 %Docstring
 Fetches content from a remote URL and handles redirects. The finished()
 signal will be emitted when content has been fetched.
 
 :param url: URL to fetch
-:param authcfg: optional authentication configuration
 %End
 
-    void fetchContent( const QNetworkRequest &request, const QString &authcfg = QString() );
+    void fetchContent( const QNetworkRequest &request );
 %Docstring
 Fetches content using a network ``request`` and handles redirects. The finished()
 signal will be emitted when content has been fetched.
-
-Optionally, authentication configuration can be set via the ``authcfg`` argument.
 
 .. versionadded:: 3.2
 %End
@@ -73,13 +70,6 @@ Returns the fetched content as a string
 Cancels any ongoing request.
 
 .. versionadded:: 3.2
-%End
-
-    bool wasCanceled() const;
-%Docstring
-Returns ``True`` if the fetching was canceled.
-
-.. versionadded:: 3.10
 %End
 
   signals:

@@ -74,7 +74,6 @@
 #include "qgsalgorithmpackage.h"
 #include "qgsalgorithmarrayoffsetlines.h"
 #include "qgsalgorithmpointonsurface.h"
-#include "qgsalgorithmpointtolayer.h"
 #include "qgsalgorithmpointsalonggeometry.h"
 #include "qgsalgorithmprojectpointcartesian.h"
 #include "qgsalgorithmpromotetomultipart.h"
@@ -115,8 +114,6 @@
 #include "qgsalgorithmwedgebuffers.h"
 #include "qgsalgorithmzonalhistogram.h"
 #include "qgsalgorithmpolygonstolines.h"
-#include "qgsprojectstylealgorithms.h"
-#include "qgsstylealgorithms.h"
 
 ///@cond PRIVATE
 
@@ -169,7 +166,6 @@ void QgsNativeAlgorithms::loadAlgorithms()
   addAlgorithm( new QgsCentroidAlgorithm() );
   addAlgorithm( new QgsClipAlgorithm() );
   addAlgorithm( new QgsCollectAlgorithm() );
-  addAlgorithm( new QgsCombineStylesAlgorithm() );
   addAlgorithm( new QgsConvexHullAlgorithm() );
   addAlgorithm( new QgsDbscanClusteringAlgorithm() );
   addAlgorithm( new QgsDifferenceAlgorithm() );
@@ -219,7 +215,6 @@ void QgsNativeAlgorithms::loadAlgorithms()
   addAlgorithm( new QgsPackageAlgorithm() );
   addAlgorithm( new QgsCreateArrayOffsetLinesAlgorithm() );
   addAlgorithm( new QgsPointOnSurfaceAlgorithm() );
-  addAlgorithm( new QgsPointToLayerAlgorithm() );
   addAlgorithm( new QgsPointsAlongGeometryAlgorithm() );
   addAlgorithm( new QgsProjectPointCartesianAlgorithm() );
   addAlgorithm( new QgsPromoteToMultipartAlgorithm() );
@@ -253,7 +248,6 @@ void QgsNativeAlgorithms::loadAlgorithms()
   addAlgorithm( new QgsSplitLinesByLengthAlgorithm() );
   addAlgorithm( new QgsSplitWithLinesAlgorithm() );
   addAlgorithm( new QgsStringConcatenationAlgorithm() );
-  addAlgorithm( new QgsStyleFromProjectAlgorithm() );
   addAlgorithm( new QgsSubdivideAlgorithm() );
   addAlgorithm( new QgsSwapXYAlgorithm() );
   addAlgorithm( new QgsSymmetricalDifferenceAlgorithm() );

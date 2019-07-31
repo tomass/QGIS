@@ -66,11 +66,6 @@ void QgsReport::updateSettings()
   reloadSettings();
 }
 
-bool QgsReport::layoutAccept( QgsStyleEntityVisitorInterface *visitor ) const
-{
-  return accept( visitor );
-}
-
 QgsMasterLayoutInterface::Type QgsReport::layoutType() const
 {
   return QgsMasterLayoutInterface::Report;

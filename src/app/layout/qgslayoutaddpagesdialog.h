@@ -79,7 +79,6 @@ class QgsLayoutAddPagesDialog : public QDialog, private Ui::QgsLayoutNewPageDial
     void pageSizeChanged( int index );
     void orientationChanged( int index );
     void setToCustomSize();
-    void showHelp();
 
   private:
 

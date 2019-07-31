@@ -22,7 +22,6 @@
 #include "qgsproperty.h"
 #include "qgssymbollayerutils.h"
 #include "qgsdatadefinedsizelegend.h"
-#include "qgsstyleentityvisitor.h"
 
 #define ROOF_EXPRESSION \
   "translate(" \
@@ -178,16 +177,6 @@ QgsSymbolList Qgs25DRenderer::symbols( QgsRenderContext &context ) const
   QgsSymbolList lst;
   lst.append( mSymbol.get() );
   return lst;
-}
-
-bool Qgs25DRenderer::accept( QgsStyleEntityVisitorInterface *visitor ) const
-{
-  if ( mSymbol )
-  {
-    QgsStyleSymbolEntity entity( mSymbol.get() );
-    return visitor->visit( QgsStyleEntityVisitorInterface::StyleLeaf( &entity ) );
-  }
-  return true;
 }
 
 QgsFillSymbolLayer *Qgs25DRenderer::roofLayer() const

@@ -31,7 +31,6 @@
 #include "qgsvectorlayer.h"
 #include "qgssettings.h"
 #include "qgsproject.h"
-#include "qgsgui.h"
 
 #include <QFileDialog>
 #include <QMessageBox>
@@ -121,8 +120,6 @@ QgsDb2SourceSelect::QgsDb2SourceSelect( QWidget *parent, Qt::WindowFlags fl, Qgs
   : QgsAbstractDataSourceWidget( parent, fl, theWidgetMode )
 {
   setupUi( this );
-  QgsGui::instance()->enableAutoGeometryRestore( this );
-
   connect( btnConnect, &QPushButton::clicked, this, &QgsDb2SourceSelect::btnConnect_clicked );
   connect( cbxAllowGeometrylessTables, &QCheckBox::stateChanged, this, &QgsDb2SourceSelect::cbxAllowGeometrylessTables_stateChanged );
   connect( btnNew, &QPushButton::clicked, this, &QgsDb2SourceSelect::btnNew_clicked );
@@ -184,13 +181,16 @@ QgsDb2SourceSelect::QgsDb2SourceSelect( QWidget *parent, Qt::WindowFlags fl, Qgs
   connect( mTablesTreeView->selectionModel(), &QItemSelectionModel::selectionChanged, this, &QgsDb2SourceSelect::treeWidgetSelectionChanged );
 
   QgsSettings settings;
-  mTablesTreeView->setSelectionMode( QAbstractItemView::ExtendedSelection );
+  mTablesTreeView->setSelectionMode( settings.value( QStringLiteral( "qgis/addDb2DC" ), false ).toBool() ?
+                                     QAbstractItemView::ExtendedSelection :
+                                     QAbstractItemView::MultiSelection );
 
 
   //for Qt < 4.3.2, passing -1 to include all model columns
   //in search does not seem to work
   mSearchColumnComboBox->setCurrentIndex( 2 );
 
+  restoreGeometry( settings.value( QStringLiteral( "Windows/Db2SourceSelect/geometry" ) ).toByteArray() );
   mHoldDialogOpen->setChecked( settings.value( QStringLiteral( "Windows/Db2SourceSelect/HoldDialogOpen" ), false ).toBool() );
 
   for ( int i = 0; i < mTableModel.columnCount(); i++ )
@@ -314,9 +314,17 @@ void QgsDb2SourceSelect::mTablesTreeView_clicked( const QModelIndex &index )
   mBuildQueryButton->setEnabled( index.parent().isValid() );
 }
 
-void QgsDb2SourceSelect::mTablesTreeView_doubleClicked( const QModelIndex & )
+void QgsDb2SourceSelect::mTablesTreeView_doubleClicked( const QModelIndex &index )
 {
-  addButtonClicked();
+  QgsSettings settings;
+  if ( settings.value( QStringLiteral( "qgis/addDb2DC" ), false ).toBool() )
+  {
+    addButtonClicked();
+  }
+  else
+  {
+    setSql( index );
+  }
 }
 
 void QgsDb2SourceSelect::mSearchGroupBox_toggled( bool checked )
@@ -395,6 +403,7 @@ QgsDb2SourceSelect::~QgsDb2SourceSelect()
   }
 
   QgsSettings settings;
+  settings.setValue( QStringLiteral( "Windows/Db2SourceSelect/geometry" ), saveGeometry() );
   settings.setValue( QStringLiteral( "Windows/Db2SourceSelect/HoldDialogOpen" ), mHoldDialogOpen->isChecked() );
 
   for ( int i = 0; i < mTableModel.columnCount(); i++ )

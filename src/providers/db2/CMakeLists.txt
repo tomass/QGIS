@@ -18,13 +18,10 @@ SET(DB2_MOC_HDRS
 
 IF (WITH_GUI)
   SET(DB2_SRCS ${DB2_SRCS}
-    qgsdb2providergui.cpp
-    qgsdb2dataitemguiprovider.cpp
     qgsdb2newconnection.cpp
     qgsdb2sourceselect.cpp
   )
   SET(DB2_MOC_HDRS ${DB2_MOC_HDRS}
-    qgsdb2dataitemguiprovider.h
     qgsdb2newconnection.h
     qgsdb2sourceselect.h
   )

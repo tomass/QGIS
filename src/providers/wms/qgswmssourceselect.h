@@ -51,15 +51,10 @@ class QgsWMSSourceSelect : public QgsAbstractDataSourceWidget, private Ui::QgsWM
     //! Constructor
     QgsWMSSourceSelect( QWidget *parent = nullptr, Qt::WindowFlags fl = QgsGuiUtils::ModalDialogFlags, QgsProviderRegistry::WidgetMode widgetMode = QgsProviderRegistry::WidgetMode::None );
 
+  public slots:
+
     //! Triggered when the provider's connections need to be refreshed
     void refresh() override;
-
-    //! Determines the layers the user selected
-    void addButtonClicked() override;
-
-    void reset() override;
-
-  private slots:
 
     //! Opens the create connection dialog to build a new connection
     void btnNew_clicked();
@@ -77,6 +72,9 @@ class QgsWMSSourceSelect : public QgsAbstractDataSourceWidget, private Ui::QgsWM
      * Once connected, available layers are displayed.
      */
     void btnConnect_clicked();
+
+    //! Determines the layers the user selected
+    void addButtonClicked() override;
 
     void searchFinished();
 

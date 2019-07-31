@@ -124,14 +124,6 @@ bool QgsVectorLayerRenderer::render()
     return false;
   }
 
-  if ( mRenderer->type() == QStringLiteral( "nullSymbol" ) )
-  {
-    // a little shortcut for the null symbol renderer - most of the time it is not going to render anything
-    // so we can even skip the whole loop to fetch features
-    if ( !mDrawVertexMarkers && !mLabelProvider && !mDiagramProvider && mSelectedFeatureIds.isEmpty() )
-      return true;
-  }
-
   bool usingEffect = false;
   if ( mRenderer->paintEffect() && mRenderer->paintEffect()->enabled() )
   {
@@ -309,7 +301,7 @@ void QgsVectorLayerRenderer::drawRenderer( QgsFeatureIterator &fit )
         {
           QgsGeometry obstacleGeometry;
           QgsSymbolList symbols = mRenderer->originalSymbolsForFeature( fet, mContext );
-          QgsSymbol *symbol = nullptr;
+
           if ( !symbols.isEmpty() && fet.geometry().type() == QgsWkbTypes::PointGeometry )
           {
             obstacleGeometry = QgsVectorLayerLabelProvider::getPointObstacleGeometry( fet, mContext, symbols );
@@ -317,13 +309,12 @@ void QgsVectorLayerRenderer::drawRenderer( QgsFeatureIterator &fit )
 
           if ( !symbols.isEmpty() )
           {
-            symbol = symbols.at( 0 );
-            QgsExpressionContextUtils::updateSymbolScope( symbol, symbolScope );
+            QgsExpressionContextUtils::updateSymbolScope( symbols.at( 0 ), symbolScope );
           }
 
           if ( mLabelProvider )
           {
-            mLabelProvider->registerFeature( fet, mContext, obstacleGeometry, symbol );
+            mLabelProvider->registerFeature( fet, mContext, obstacleGeometry );
           }
           if ( mDiagramProvider )
           {
@@ -394,7 +385,7 @@ void QgsVectorLayerRenderer::drawRendererLevels( QgsFeatureIterator &fit )
     {
       QgsGeometry obstacleGeometry;
       QgsSymbolList symbols = mRenderer->originalSymbolsForFeature( fet, mContext );
-      std::unique_ptr< QgsSymbol > symbol;
+
       if ( !symbols.isEmpty() && fet.geometry().type() == QgsWkbTypes::PointGeometry )
       {
         obstacleGeometry = QgsVectorLayerLabelProvider::getPointObstacleGeometry( fet, mContext, symbols );
@@ -402,13 +393,12 @@ void QgsVectorLayerRenderer::drawRendererLevels( QgsFeatureIterator &fit )
 
       if ( !symbols.isEmpty() )
       {
-        symbol.reset( symbols.at( 0 )->clone() );
-        QgsExpressionContextUtils::updateSymbolScope( symbol.get(), symbolScope );
+        QgsExpressionContextUtils::updateSymbolScope( symbols.at( 0 ), symbolScope );
       }
 
       if ( mLabelProvider )
       {
-        mLabelProvider->registerFeature( fet, mContext, obstacleGeometry, symbol.release() );
+        mLabelProvider->registerFeature( fet, mContext, obstacleGeometry );
       }
       if ( mDiagramProvider )
       {

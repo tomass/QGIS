@@ -32,7 +32,6 @@
 #include "qgsexpressioncontext.h"
 #include "qgsapplication.h"
 #include "qgsexpressioncontextutils.h"
-#include "qgsstyleentityvisitor.h"
 
 #include <QPainter>
 #include <QStyleOptionGraphicsItem>
@@ -389,7 +388,7 @@ bool QgsLayoutItemMap::containsWmsLayer() const
   const QList< QgsMapLayer * > layers = layersToRender();
   for ( QgsMapLayer *layer : layers )
   {
-    if ( layer->dataProvider() && layer->providerType() == QLatin1String( "wms" ) )
+    if ( layer->dataProvider() && layer->dataProvider()->name() == QLatin1String( "wms" ) )
     {
       return true;
     }
@@ -1193,7 +1192,6 @@ QgsMapSettings QgsLayoutItemMap::mapSettings( const QgsRectangle &extent, QSizeF
 
   // override project "show partial labels" setting with this map's setting
   labelSettings.setFlag( QgsLabelingEngineSettings::UsePartialCandidates, mMapFlags & ShowPartialLabels );
-  labelSettings.setFlag( QgsLabelingEngineSettings::DrawUnplacedLabels, mMapFlags & ShowUnplacedLabels );
   jobMapSettings.setLabelingEngineSettings( labelSettings );
 
   // override the default text render format inherited from the labeling engine settings using the layout's render context setting
@@ -1342,36 +1340,6 @@ void QgsLayoutItemMap::removeLabelBlockingItem( QgsLayoutItem *item )
 bool QgsLayoutItemMap::isLabelBlockingItem( QgsLayoutItem *item ) const
 {
   return mBlockingLabelItems.contains( item );
-}
-
-bool QgsLayoutItemMap::accept( QgsStyleEntityVisitorInterface *visitor ) const
-{
-  // NOTE: if visitEnter returns false it means "don't visit the item", not "abort all further visitations"
-  if ( !visitor->visitEnter( QgsStyleEntityVisitorInterface::Node( QgsStyleEntityVisitorInterface::NodeType::LayoutItem, uuid(), displayName() ) ) )
-    return true;
-
-  if ( mOverviewStack )
-  {
-    for ( int i = 0; i < mOverviewStack->size(); ++i )
-    {
-      if ( mOverviewStack->item( i )->accept( visitor ) )
-        return false;
-    }
-  }
-
-  if ( mGridStack )
-  {
-    for ( int i = 0; i < mGridStack->size(); ++i )
-    {
-      if ( mGridStack->item( i )->accept( visitor ) )
-        return false;
-    }
-  }
-
-  if ( !visitor->visitExit( QgsStyleEntityVisitorInterface::Node( QgsStyleEntityVisitorInterface::NodeType::LayoutItem, uuid(), displayName() ) ) )
-    return false;
-
-  return true;
 }
 
 QPointF QgsLayoutItemMap::mapToItemCoords( QPointF mapCoords ) const
@@ -2244,4 +2212,3 @@ QgsRectangle QgsLayoutItemMap::computeAtlasRectangle()
     return g.boundingBox();
   }
 }
-

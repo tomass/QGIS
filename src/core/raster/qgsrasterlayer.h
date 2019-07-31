@@ -43,6 +43,7 @@ class QgsMapToPixel;
 class QgsRasterRenderer;
 class QgsRectangle;
 class QImage;
+class QLibrary;
 class QPixmap;
 class QSlider;
 
@@ -421,7 +422,6 @@ class CORE_EXPORT QgsRasterLayer : public QgsMapLayer
     void setLayerOrder( const QStringList &layers ) override;
     void setSubLayerVisibility( const QString &name, bool vis ) override;
     QDateTime timestamp() const override;
-    bool accept( QgsStyleEntityVisitorInterface *visitor ) const override;
 
     /**
      * Writes the symbology of the layer into the document provided in SLD 1.0.0 format
@@ -434,15 +434,6 @@ class CORE_EXPORT QgsRasterLayer : public QgsMapLayer
      */
     bool writeSld( QDomNode &node, QDomDocument &doc, QString &errorMessage, const QgsStringMap &props = QgsStringMap() ) const;
 
-    /**
-     * If the ignoreExtent flag is set, the layer will also render outside the
-     * bounding box reported by the data provider.
-     * To be used for example for WMS layers with labels or symbology that happens
-     * to be drawn outside the data extent.
-     *
-     * \since QGIS 3.10
-     */
-    bool ignoreExtents() const;
 
   public slots:
     void showStatusMessage( const QString &message );

@@ -58,7 +58,7 @@ class QgsOptionsWidgetFactory;
 class QgsLocatorFilter;
 class QgsStatusBar;
 class QgsMeshLayer;
-class QgsBrowserGuiModel;
+class QgsBrowserModel;
 
 
 /**
@@ -994,7 +994,7 @@ class GUI_EXPORT QgisInterface : public QObject
      * creating a new browser model for every use.
      * \since QGIS 3.4
      */
-    virtual QgsBrowserGuiModel *browserModel() = 0;
+    virtual QgsBrowserModel *browserModel() = 0;
 
   signals:
 

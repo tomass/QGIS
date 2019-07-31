@@ -188,9 +188,3 @@ void QgsLayerTreeLayer::layerNameChanged()
   Q_ASSERT( mRef );
   emit nameChanged( this, mRef->name() );
 }
-
-void QgsLayerTreeLayer::setLabelExpression( const QString &expression )
-{
-  mLabelExpression = expression;
-}
-

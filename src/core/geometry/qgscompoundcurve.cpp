@@ -179,9 +179,6 @@ bool QgsCompoundCurve::fromWkt( const QString &wkt )
     return false;
   mWkbType = parts.first;
 
-  if ( parts.second.compare( QLatin1String( "EMPTY" ), Qt::CaseInsensitive ) == 0 )
-    return true;
-
   QString defaultChildWkbType = QStringLiteral( "LineString%1%2" ).arg( is3D() ? QStringLiteral( "Z" ) : QString(), isMeasure() ? QStringLiteral( "M" ) : QString() );
 
   const QStringList blocks = QgsGeometryUtils::wktGetChildBlocks( parts.second, defaultChildWkbType );
@@ -251,28 +248,22 @@ QByteArray QgsCompoundCurve::asWkb() const
 
 QString QgsCompoundCurve::asWkt( int precision ) const
 {
-  QString wkt = wktTypeStr();
-  if ( isEmpty() )
-    wkt += QStringLiteral( " EMPTY" );
-  else
+  QString wkt = wktTypeStr() + QLatin1String( " (" );
+  for ( const QgsCurve *curve : mCurves )
   {
-    wkt += QLatin1String( " (" );
-    for ( const QgsCurve *curve : mCurves )
+    QString childWkt = curve->asWkt( precision );
+    if ( qgsgeometry_cast<const QgsLineString *>( curve ) )
     {
-      QString childWkt = curve->asWkt( precision );
-      if ( qgsgeometry_cast<const QgsLineString *>( curve ) )
-      {
-        // Type names of linear geometries are omitted
-        childWkt = childWkt.mid( childWkt.indexOf( '(' ) );
-      }
-      wkt += childWkt + ',';
+      // Type names of linear geometries are omitted
+      childWkt = childWkt.mid( childWkt.indexOf( '(' ) );
     }
-    if ( wkt.endsWith( ',' ) )
-    {
-      wkt.chop( 1 );
-    }
-    wkt += ')';
+    wkt += childWkt + ',';
   }
+  if ( wkt.endsWith( ',' ) )
+  {
+    wkt.chop( 1 );
+  }
+  wkt += ')';
   return wkt;
 }
 

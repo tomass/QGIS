@@ -175,21 +175,13 @@ QgsDatumTransformDialog::QgsDatumTransformDialog( const QgsCoordinateReferenceSy
   // proj 6 doesn't provide deprecated operations
   mHideDeprecatedCheckBox->setVisible( false );
 
-#if PROJ_VERSION_MAJOR>6 or PROJ_VERSION_MINOR>=2
-  mShowSupersededCheckBox->setVisible( true );
-#else
-  mShowSupersededCheckBox->setVisible( false );
-#endif
-
   mLabelDstDescription->hide();
 #else
-  mShowSupersededCheckBox->setVisible( false );
   QgsSettings settings;
   mHideDeprecatedCheckBox->setChecked( settings.value( QStringLiteral( "Windows/DatumTransformDialog/hideDeprecated" ), true ).toBool() );
 #endif
 
   connect( mHideDeprecatedCheckBox, &QCheckBox::stateChanged, this, [ = ] { load(); } );
-  connect( mShowSupersededCheckBox, &QCheckBox::toggled, this, &QgsDatumTransformDialog::showSupersededToggled );
   connect( mDatumTransformTableWidget, &QTableWidget::currentItemChanged, this, &QgsDatumTransformDialog::tableCurrentItemChanged );
 
   connect( mSourceProjectionSelectionWidget, &QgsProjectionSelectionWidget::crsChanged, this, &QgsDatumTransformDialog::setSourceCrs );
@@ -199,7 +191,7 @@ QgsDatumTransformDialog::QgsDatumTransformDialog( const QgsCoordinateReferenceSy
   mSourceCrs = sourceCrs;
   mDestinationCrs = destinationCrs;
 #if PROJ_VERSION_MAJOR>=6
-  mDatumTransforms = QgsDatumTransform::operations( sourceCrs, destinationCrs, mShowSupersededCheckBox->isChecked() );
+  mDatumTransforms = QgsDatumTransform::operations( sourceCrs, destinationCrs );
 #else
   Q_NOWARN_DEPRECATED_PUSH
   mDatumTransforms = QgsDatumTransform::datumTransformations( sourceCrs, destinationCrs );
@@ -818,7 +810,7 @@ void QgsDatumTransformDialog::setSourceCrs( const QgsCoordinateReferenceSystem &
 {
   mSourceCrs = sourceCrs;
 #if PROJ_VERSION_MAJOR>=6
-  mDatumTransforms = QgsDatumTransform::operations( mSourceCrs, mDestinationCrs, mShowSupersededCheckBox->isChecked() );
+  mDatumTransforms = QgsDatumTransform::operations( mSourceCrs, mDestinationCrs );
 #else
   Q_NOWARN_DEPRECATED_PUSH
   mDatumTransforms = QgsDatumTransform::datumTransformations( mSourceCrs, mDestinationCrs );
@@ -832,20 +824,7 @@ void QgsDatumTransformDialog::setDestinationCrs( const QgsCoordinateReferenceSys
 {
   mDestinationCrs = destinationCrs;
 #if PROJ_VERSION_MAJOR>=6
-  mDatumTransforms = QgsDatumTransform::operations( mSourceCrs, mDestinationCrs, mShowSupersededCheckBox->isChecked() );
-#else
-  Q_NOWARN_DEPRECATED_PUSH
-  mDatumTransforms = QgsDatumTransform::datumTransformations( mSourceCrs, mDestinationCrs );
-  Q_NOWARN_DEPRECATED_POP
-#endif
-  load();
-  setOKButtonEnabled();
-}
-
-void QgsDatumTransformDialog::showSupersededToggled( bool )
-{
-#if PROJ_VERSION_MAJOR>=6
-  mDatumTransforms = QgsDatumTransform::operations( mSourceCrs, mDestinationCrs, mShowSupersededCheckBox->isChecked() );
+  mDatumTransforms = QgsDatumTransform::operations( mSourceCrs, mDestinationCrs );
 #else
   Q_NOWARN_DEPRECATED_PUSH
   mDatumTransforms = QgsDatumTransform::datumTransformations( mSourceCrs, mDestinationCrs );

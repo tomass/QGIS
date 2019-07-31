@@ -61,8 +61,6 @@ class CORE_EXPORT QgsPrintLayout : public QgsLayout, public QgsMasterLayoutInter
     QgsExpressionContext createExpressionContext() const override;
     void updateSettings() override;
 
-    bool layoutAccept( QgsStyleEntityVisitorInterface *visitor ) const override;
-
   signals:
 
     /**

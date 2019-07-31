@@ -108,7 +108,7 @@ class CORE_EXPORT QgsReadWriteContext
     const QgsProjectTranslator *projectTranslator( ) const { return mProjectTranslator; }
 
     /**
-     * Sets the project translator.
+     * Sets the project translator. Means it shouldn't conform mDefaultTranslator anymore.
      * It's usually the QgsProject where the function with the context is made and won't be changed anymore.
      *
      * \since QGIS 3.4
@@ -135,6 +135,13 @@ class CORE_EXPORT QgsReadWriteContext
 
   private:
 
+    class DefaultTranslator : public QgsProjectTranslator
+    {
+        // QgsProjectTranslator interface
+      public:
+        QString translate( const QString &context, const QString &sourceText, const char *disambiguation, int n ) const;
+    };
+
     //! Pop the last category
     void leaveCategory();
 
@@ -143,6 +150,7 @@ class CORE_EXPORT QgsReadWriteContext
     QStringList mCategories = QStringList();
     QgsProjectTranslator *mProjectTranslator = nullptr;
     friend class QgsReadWriteContextCategoryPopper;
+    DefaultTranslator mDefaultTranslator;
     QgsCoordinateTransformContext mCoordinateTransformContext = QgsCoordinateTransformContext();
 };
 

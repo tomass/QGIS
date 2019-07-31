@@ -94,19 +94,11 @@ QVariant QgsGeometryValidationModel::data( const QModelIndex &index, int role ) 
 
       case FeatureExtentRole:
       {
-        const QgsRectangle contextBoundingBox = topologyError->contextBoundingBox();
-        if ( !contextBoundingBox.isNull() )
-        {
-          return contextBoundingBox;
-        }
-        else
-        {
-          const QgsFeatureId fid = topologyError->featureId();
-          if ( FID_IS_NULL( fid ) )
-            return QgsRectangle();
-          const QgsFeature feature = getFeature( fid );
-          return feature.geometry().boundingBox();
-        }
+        const QgsFeatureId fid = topologyError->featureId();
+        if ( FID_IS_NULL( fid ) )
+          return QgsRectangle();
+        const QgsFeature feature = getFeature( fid );
+        return feature.geometry().boundingBox();
       }
 
       case ProblemExtentRole:

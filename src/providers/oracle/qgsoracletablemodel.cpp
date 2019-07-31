@@ -351,6 +351,6 @@ QString QgsOracleTableModel::layerURI( const QModelIndex &index, const QgsDataSo
   uri.setSrid( srid );
   uri.disableSelectAtId( !selectAtId );
 
-  QgsDebugMsg( QStringLiteral( "returning uri %1" ).arg( uri.uri( false ) ) );
-  return uri.uri( false );
+  QgsDebugMsg( QStringLiteral( "returning uri %1" ).arg( uri.uri() ) );
+  return uri.uri();
 }

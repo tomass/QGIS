@@ -215,9 +215,6 @@ bool QgsCurvePolygon::fromWkt( const QString &wkt )
 
   mWkbType = parts.first;
 
-  if ( parts.second.compare( QLatin1String( "EMPTY" ), Qt::CaseInsensitive ) == 0 )
-    return true;
-
   QString defaultChildWkbType = QStringLiteral( "LineString%1%2" ).arg( is3D() ? QStringLiteral( "Z" ) : QString(), isMeasure() ? QStringLiteral( "M" ) : QString() );
 
   const QStringList blocks = QgsGeometryUtils::wktGetChildBlocks( parts.second, defaultChildWkbType );
@@ -318,39 +315,32 @@ QByteArray QgsCurvePolygon::asWkb() const
 
 QString QgsCurvePolygon::asWkt( int precision ) const
 {
-  QString wkt = wktTypeStr();
-
-  if ( isEmpty() )
-    wkt += QStringLiteral( " EMPTY" );
-  else
+  QString wkt = wktTypeStr() + QLatin1String( " (" );
+  if ( mExteriorRing )
   {
-    wkt += QLatin1String( " (" );
-    if ( mExteriorRing )
+    QString childWkt = mExteriorRing->asWkt( precision );
+    if ( qgsgeometry_cast<QgsLineString *>( mExteriorRing.get() ) )
     {
-      QString childWkt = mExteriorRing->asWkt( precision );
-      if ( qgsgeometry_cast<QgsLineString *>( mExteriorRing.get() ) )
-      {
-        // Type names of linear geometries are omitted
-        childWkt = childWkt.mid( childWkt.indexOf( '(' ) );
-      }
-      wkt += childWkt + ',';
+      // Type names of linear geometries are omitted
+      childWkt = childWkt.mid( childWkt.indexOf( '(' ) );
     }
-    for ( const QgsCurve *curve : mInteriorRings )
-    {
-      QString childWkt = curve->asWkt( precision );
-      if ( qgsgeometry_cast<const QgsLineString *>( curve ) )
-      {
-        // Type names of linear geometries are omitted
-        childWkt = childWkt.mid( childWkt.indexOf( '(' ) );
-      }
-      wkt += childWkt + ',';
-    }
-    if ( wkt.endsWith( ',' ) )
-    {
-      wkt.chop( 1 ); // Remove last ','
-    }
-    wkt += ')';
+    wkt += childWkt + ',';
   }
+  for ( const QgsCurve *curve : mInteriorRings )
+  {
+    QString childWkt = curve->asWkt( precision );
+    if ( qgsgeometry_cast<const QgsLineString *>( curve ) )
+    {
+      // Type names of linear geometries are omitted
+      childWkt = childWkt.mid( childWkt.indexOf( '(' ) );
+    }
+    wkt += childWkt + ',';
+  }
+  if ( wkt.endsWith( ',' ) )
+  {
+    wkt.chop( 1 ); // Remove last ','
+  }
+  wkt += ')';
   return wkt;
 }
 

@@ -15,32 +15,31 @@
  *                                                                         *
  ***************************************************************************/
 
-#include <QList>
-
 #include "qgis.h"
-#include "qgsprovidermetadata.h"
-#include "qgsgeonodedataitems.h"
 
-static const QString PROVIDER_KEY = QStringLiteral( "geonode" );
-static const QString PROVIDER_DESCRIPTION = QStringLiteral( "GeoNode provider" );
 
-class QgsGeoNodeProviderMetadata: public QgsProviderMetadata
+/**
+ * Required key function (used to map the plugin to a data store type)
+*/
+QGISEXTERN QString providerKey()
 {
-  public:
-    QgsGeoNodeProviderMetadata(): QgsProviderMetadata( PROVIDER_KEY, PROVIDER_DESCRIPTION ) {}
-
-    QList<QgsDataItemProvider *> dataItemProviders() const override;
-};
-
-QList<QgsDataItemProvider *> QgsGeoNodeProviderMetadata::dataItemProviders() const
-{
-  QList<QgsDataItemProvider *> providers;
-  providers << new QgsGeoNodeDataItemProvider();
-  return providers;
+  return QStringLiteral( "geonode" );
 }
 
-
-QGISEXTERN QgsProviderMetadata *providerMetadataFactory()
+/**
+ * Required description function
+ */
+QGISEXTERN QString description()
 {
-  return new QgsGeoNodeProviderMetadata();
+  return QStringLiteral( "GeoNode provider" );
+}
+
+/**
+ * Required isProvider function. Used to determine if this shared library
+ * is a data provider plugin
+ */
+
+QGISEXTERN bool isProvider()
+{
+  return true;
 }

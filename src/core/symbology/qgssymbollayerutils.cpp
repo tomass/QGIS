@@ -54,7 +54,7 @@ QString QgsSymbolLayerUtils::encodeColor( const QColor &color )
 
 QColor QgsSymbolLayerUtils::decodeColor( const QString &str )
 {
-  QStringList lst = str.split( ',' );
+  const QStringList lst = str.split( ',' );
   if ( lst.count() < 3 )
   {
     return QColor( str );
@@ -187,13 +187,9 @@ QString QgsSymbolLayerUtils::encodePenJoinStyle( Qt::PenJoinStyle style )
 
 Qt::PenJoinStyle QgsSymbolLayerUtils::decodePenJoinStyle( const QString &str )
 {
-  const QString cleaned = str.toLower().trimmed();
-  if ( cleaned == QLatin1String( "bevel" ) )
-    return Qt::BevelJoin;
-  if ( cleaned == QLatin1String( "miter" ) )
-    return Qt::MiterJoin;
-  if ( cleaned == QLatin1String( "round" ) )
-    return Qt::RoundJoin;
+  if ( str == QLatin1String( "bevel" ) ) return Qt::BevelJoin;
+  if ( str == QLatin1String( "miter" ) ) return Qt::MiterJoin;
+  if ( str == QLatin1String( "round" ) ) return Qt::RoundJoin;
   return Qt::BevelJoin;
 }
 

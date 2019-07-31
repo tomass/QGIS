@@ -28,8 +28,6 @@
 #include "qgsexception.h"
 #include "qgssettings.h"
 #include "qgsmapcanvas.h"
-#include "qgshelp.h"
-#include "qgsgui.h"
 
 #include <QButtonGroup>
 #include <QListWidgetItem>
@@ -37,6 +35,7 @@
 #include <QFileDialog>
 #include <QRadioButton>
 #include <QImageReader>
+#include "qgshelp.h"
 
 QgsArcGisServiceSourceSelect::QgsArcGisServiceSourceSelect( const QString &serviceName, ServiceType serviceType, QWidget *parent, Qt::WindowFlags fl, QgsProviderRegistry::WidgetMode widgetMode )
   : QgsAbstractDataSourceWidget( parent, fl, widgetMode )
@@ -44,8 +43,6 @@ QgsArcGisServiceSourceSelect::QgsArcGisServiceSourceSelect( const QString &servi
   , mServiceType( serviceType )
 {
   setupUi( this );
-  QgsGui::instance()->enableAutoGeometryRestore( this );
-
   connect( cmbConnections, static_cast<void ( QComboBox::* )( int )>( &QComboBox::activated ), this, &QgsArcGisServiceSourceSelect::cmbConnections_activated );
   setupButtons( buttonBox );
   connect( buttonBox, &QDialogButtonBox::helpRequested, this, &QgsArcGisServiceSourceSelect::showHelp );
@@ -72,6 +69,7 @@ QgsArcGisServiceSourceSelect::QgsArcGisServiceSourceSelect( const QString &servi
   treeView->setItemDelegate( new QgsAbstractDataSourceWidgetItemDelegate( treeView ) );
 
   QgsSettings settings;
+  restoreGeometry( settings.value( QStringLiteral( "Windows/SourceSelectDialog/geometry" ) ).toByteArray() );
   cbxUseTitleLayerName->setChecked( settings.value( QStringLiteral( "Windows/SourceSelectDialog/UseTitleLayerName" ), false ).toBool() );
 
   mModel = new QStandardItemModel();
@@ -102,6 +100,7 @@ QgsArcGisServiceSourceSelect::QgsArcGisServiceSourceSelect( const QString &servi
 QgsArcGisServiceSourceSelect::~QgsArcGisServiceSourceSelect()
 {
   QgsSettings settings;
+  settings.setValue( QStringLiteral( "Windows/SourceSelectDialog/geometry" ), saveGeometry() );
   settings.setValue( QStringLiteral( "Windows/SourceSelectDialog/UseTitleLayerName" ), cbxUseTitleLayerName->isChecked() );
 
   delete mProjectionSelector;

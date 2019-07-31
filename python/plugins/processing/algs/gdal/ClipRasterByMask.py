@@ -59,7 +59,6 @@ class ClipRasterByMask(GdalAlgorithm):
     OPTIONS = 'OPTIONS'
     DATA_TYPE = 'DATA_TYPE'
     MULTITHREADING = 'MULTITHREADING'
-    EXTRA = 'EXTRA'
     OUTPUT = 'OUTPUT'
 
     def __init__(self):
@@ -107,13 +106,11 @@ class ClipRasterByMask(GdalAlgorithm):
                                                        type=QgsProcessingParameterNumber.Double,
                                                        defaultValue=None,
                                                        optional=True))
-
         multithreading_param = QgsProcessingParameterBoolean(self.MULTITHREADING,
                                                              self.tr('Use multithreaded warping implementation'),
                                                              defaultValue=False)
         multithreading_param.setFlags(multithreading_param.flags() | QgsProcessingParameterDefinition.FlagAdvanced)
         self.addParameter(multithreading_param)
-
         options_param = QgsProcessingParameterString(self.OPTIONS,
                                                      self.tr('Additional creation options'),
                                                      defaultValue='',
@@ -131,13 +128,6 @@ class ClipRasterByMask(GdalAlgorithm):
                                                     defaultValue=0)
         dataType_param.setFlags(dataType_param.flags() | QgsProcessingParameterDefinition.FlagAdvanced)
         self.addParameter(dataType_param)
-
-        extra_param = QgsProcessingParameterString(self.EXTRA,
-                                                   self.tr('Additional command-line parameters'),
-                                                   defaultValue=None,
-                                                   optional=True)
-        extra_param.setFlags(extra_param.flags() | QgsProcessingParameterDefinition.FlagAdvanced)
-        self.addParameter(extra_param)
 
         self.addParameter(QgsProcessingParameterRasterDestination(self.OUTPUT,
                                                                   self.tr('Clipped (mask)')))
@@ -234,10 +224,6 @@ class ClipRasterByMask(GdalAlgorithm):
 
         if options:
             arguments.extend(GdalUtils.parseCreationOptions(options))
-
-        if self.EXTRA in parameters and parameters[self.EXTRA] not in (None, ''):
-            extra = self.parameterAsString(parameters, self.EXTRA, context)
-            arguments.append(extra)
 
         arguments.append(inLayer.source())
         arguments.append(out)

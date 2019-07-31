@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1033</width>
+    <width>1030</width>
     <height>506</height>
    </rect>
   </property>
@@ -16,8 +16,8 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>1033</width>
-     <height>24</height>
+     <width>1030</width>
+     <height>22</height>
     </rect>
    </property>
    <property name="toolTip">
@@ -605,10 +605,7 @@
    </attribute>
    <addaction name="mActionLabeling"/>
    <addaction name="mActionDiagramProperties"/>
-   <addaction name="separator"/>
    <addaction name="mActionShowPinnedLabels"/>
-   <addaction name="mActionShowUnplacedLabels"/>
-   <addaction name="separator"/>
    <addaction name="mActionPinLabels"/>
    <addaction name="mActionShowHideLabels"/>
    <addaction name="mActionMoveLabel"/>
@@ -946,7 +943,7 @@
   <action name="mActionDeleteSelected">
    <property name="icon">
     <iconset resource="../../images/images.qrc">
-     <normaloff>:/images/themes/default/mActionDeleteSelectedFeatures.svg</normaloff>:/images/themes/default/mActionDeleteSelectedFeatures.svg</iconset>
+     <normaloff>:/images/themes/default/mActionDeleteSelected.svg</normaloff>:/images/themes/default/mActionDeleteSelected.svg</iconset>
    </property>
    <property name="text">
     <string>Delete Selected</string>
@@ -1884,8 +1881,7 @@
     <string>Move Label and Diagram</string>
    </property>
    <property name="toolTip">
-    <string>Moves a Label or Diagram
-Acts on all editable layers.</string>
+    <string>Move Label and Diagram</string>
    </property>
   </action>
   <action name="mActionRotateLabel">
@@ -1900,9 +1896,8 @@ Acts on all editable layers.</string>
     <string>Rotate Label</string>
    </property>
    <property name="toolTip">
-    <string>Rotates a Label
-Holding Ctrl (Cmd) while rotating increments by 15 deg.
-Acts on all editable layers.</string>
+    <string>Rotate Label
+Ctrl (Cmd) increments by 15 deg.</string>
    </property>
   </action>
   <action name="mActionChangeLabelProperties">
@@ -1915,11 +1910,6 @@ Acts on all editable layers.</string>
    </property>
    <property name="text">
     <string>Change Label</string>
-   </property>
-   <property name="toolTip">
-    <string>Change Label Properties
-Allows customization of individual label properties such as font size and color.
-Acts on all editable layers.</string>
    </property>
   </action>
   <action name="mActionStyleManager">
@@ -2172,9 +2162,9 @@ Acts on all editable layers.</string>
    </property>
    <property name="toolTip">
     <string>Pin/Unpin Labels and Diagrams
-Click or marquee on label/diagram to pin.
-Shift clicking or marqueeing unpins labels, while Ctrl (Cmd) toggles label state.
-Acts on all editable layers.</string>
+Click or marquee on label/diagram to pin
+Shift unpins, Ctrl (Cmd) toggles state
+Acts on all editable layers</string>
    </property>
   </action>
   <action name="mActionShowPinnedLabels">
@@ -2189,8 +2179,7 @@ Acts on all editable layers.</string>
     <string>Highlight Pinned Labels and Diagrams</string>
    </property>
    <property name="toolTip">
-    <string>Highlight Pinned Labels and Diagrams
-Shows highlight rectangles around labels which are fixed in place, e.g. due to manual placement.</string>
+    <string>Highlight Pinned Labels and Diagrams</string>
    </property>
   </action>
   <action name="mActionNewBlankProject">
@@ -2242,9 +2231,9 @@ Shows highlight rectangles around labels which are fixed in place, e.g. due to m
    </property>
    <property name="toolTip">
     <string>Show/Hide Labels And Diagrams
-Click or marquee on features to show individual labels or diagrams.
-Shift+click or marquee on a label or diagram to hide it.
-Acts on the currently active editable layer only.</string>
+Click or marquee on feature to show label and diagram
+Shift+click or marquee on label or diagram to hide it
+Acts on currently active editable layer</string>
    </property>
   </action>
   <action name="mActionHtmlAnnotation">
@@ -3197,22 +3186,6 @@ Acts on the currently active editable layer only.</string>
    </property>
    <property name="toolTip">
     <string>New Virtual Layer</string>
-   </property>
-  </action>
-  <action name="mActionShowUnplacedLabels">
-   <property name="checkable">
-    <bool>true</bool>
-   </property>
-   <property name="icon">
-    <iconset resource="../../images/images.qrc">
-     <normaloff>:/images/themes/default/mActionShowUnplacedLabel.svg</normaloff>:/images/themes/default/mActionShowUnplacedLabel.svg</iconset>
-   </property>
-   <property name="text">
-    <string>Show Unplaced Labels</string>
-   </property>
-   <property name="toolTip">
-    <string>Toggles Display of Unplaced Labels
-Shows placeholders for labels which could not be placed, e.g. due to overlaps with other map labels.</string>
    </property>
   </action>
  </widget>

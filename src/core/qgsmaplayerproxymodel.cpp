@@ -103,7 +103,7 @@ bool QgsMapLayerProxyModel::acceptsLayer( QgsMapLayer *layer ) const
   if ( mExceptList.contains( layer ) )
     return false;
 
-  if ( layer->dataProvider() && mExcludedProviders.contains( layer->providerType() ) )
+  if ( layer->dataProvider() && mExcludedProviders.contains( layer->dataProvider()->name() ) )
     return false;
 
   if ( mFilters.testFlag( WritableLayer ) && layer->readOnly() )

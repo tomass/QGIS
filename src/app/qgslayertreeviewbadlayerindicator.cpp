@@ -25,7 +25,6 @@
 #include "qgsbrowsermodel.h"
 #include "qgsbrowsertreeview.h"
 #include "qgsbrowserproxymodel.h"
-#include "qgsmessageviewer.h"
 
 #include <functional>
 #include <QDialog>
@@ -35,18 +34,6 @@
 QgsLayerTreeViewBadLayerIndicatorProvider::QgsLayerTreeViewBadLayerIndicatorProvider( QgsLayerTreeView *view )
   : QgsLayerTreeViewIndicatorProvider( view )
 {
-}
-
-void QgsLayerTreeViewBadLayerIndicatorProvider::reportLayerError( const QString &error, QgsMapLayer *layer )
-{
-  for ( const Error &e : qgis::as_const( mErrors ) )
-  {
-    // don't report identical errors
-    if ( e.layer == layer && error == e.error )
-      return;
-  }
-  mErrors.append( Error( error, layer ) );
-  updateLayerIndicator( layer );
 }
 
 void QgsLayerTreeViewBadLayerIndicatorProvider::onIndicatorClicked( const QModelIndex &index )
@@ -60,74 +47,22 @@ void QgsLayerTreeViewBadLayerIndicatorProvider::onIndicatorClicked( const QModel
   if ( !layer )
     return;
 
-  if ( !layer->isValid() )
-    emit requestChangeDataSource( layer );
-  else
-  {
-    QStringList thisLayerErrors;
-    QList< Error > newErrors;
-    for ( const Error &error : qgis::as_const( mErrors ) )
-    {
-      if ( error.layer != layer )
-        newErrors.append( error );
-      else
-        thisLayerErrors.append( error.error );
-    }
-    mErrors = newErrors;
-    updateLayerIndicator( layer );
-
-    if ( !thisLayerErrors.empty() )
-    {
-      // show error in a dialog (delete on close is set automatically for QgsMessageViewer!)
-      QgsMessageViewer *m = new QgsMessageViewer( QgisApp::instance() );
-      m->setWindowTitle( tr( "Layer Error" ) );
-      if ( thisLayerErrors.count() == 1 )
-        m->setMessageAsPlainText( thisLayerErrors.at( 0 ) );
-      else
-      {
-        QString message = QStringLiteral( "<ul>" );
-        for ( const QString &e : thisLayerErrors )
-          message += QStringLiteral( "<li>%1</li>" ).arg( e );
-        message += QStringLiteral( "</ul>" );
-        m->setMessageAsHtml( message );
-      }
-      m->exec();
-    }
-  }
+  emit requestChangeDataSource( layer );
 }
 
 QString QgsLayerTreeViewBadLayerIndicatorProvider::iconName( QgsMapLayer *layer )
 {
-  if ( !layer->isValid() )
-    return QStringLiteral( "/mIndicatorBadLayer.svg" );
-  else
-    return QStringLiteral( "/mIndicatorLayerError.svg" );
+  Q_UNUSED( layer )
+  return QStringLiteral( "/mIndicatorBadLayer.svg" );
 }
 
 QString QgsLayerTreeViewBadLayerIndicatorProvider::tooltipText( QgsMapLayer *layer )
 {
-  if ( !layer->isValid() )
-    return tr( "<b>Unavailable layer!</b><br>Layer data source could not be found. Click to set a new data source" );
-  else
-  {
-    for ( const Error &error : qgis::as_const( mErrors ) )
-    {
-      if ( error.layer == layer )
-        return error.error;
-    }
-  }
-  return QString();
+  Q_UNUSED( layer )
+  return tr( "<b>Unavailable layer!</b><br>Layer data source could not be found. Click to set a new data source" );
 }
 
 bool QgsLayerTreeViewBadLayerIndicatorProvider::acceptLayer( QgsMapLayer *layer )
 {
-  if ( !layer->isValid() )
-    return true;
-
-  for ( const Error &error : qgis::as_const( mErrors ) )
-  {
-    if ( error.layer == layer )
-      return true;
-  }
-  return false;
+  return ! layer->isValid();
 }

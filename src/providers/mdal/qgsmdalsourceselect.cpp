@@ -52,3 +52,8 @@ void QgsMdalSourceSelect::addButtonClicked()
     emit addMeshLayer( path, QFileInfo( path ).baseName(), QStringLiteral( "mdal" ) );
   }
 }
+
+QGISEXTERN QgsMdalSourceSelect *selectWidget( QWidget *parent, Qt::WindowFlags fl, QgsProviderRegistry::WidgetMode widgetMode )
+{
+  return new QgsMdalSourceSelect( parent, fl, widgetMode );
+}

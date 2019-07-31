@@ -30,6 +30,8 @@ class APP_EXPORT QgsVectorLayerLoadStyleDialog : public QDialog, private Ui::Qgs
   public:
     explicit QgsVectorLayerLoadStyleDialog( QgsVectorLayer *layer, QWidget *parent = nullptr );
 
+    ~QgsVectorLayerLoadStyleDialog() override;
+
     QgsMapLayer::StyleCategories styleCategories() const;
 
     QgsVectorLayerProperties::StyleType currentStyleType() const;

@@ -87,7 +87,7 @@ QgsMeshCalculator::Result QgsMeshCalculator::processCalculation( QgsFeedback *fe
 
   if ( !mMeshLayer ||
        !mMeshLayer->dataProvider() ||
-       mMeshLayer->providerType() != QStringLiteral( "mdal" )
+       mMeshLayer->dataProvider()->name() != QStringLiteral( "mdal" )
      )
   {
     return CreateOutputError;

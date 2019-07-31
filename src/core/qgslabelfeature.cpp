@@ -72,33 +72,3 @@ void QgsLabelFeature::setPermissibleZone( const QgsGeometry &geometry )
 
   mPermissibleZoneGeosPrepared.reset( GEOSPrepare_r( QgsGeos::getGEOSHandler(), mPermissibleZoneGeos.get() ) );
 }
-
-QgsFeature QgsLabelFeature::feature() const
-{
-  return mFeature;
-}
-
-void QgsLabelFeature::setFeature( const QgsFeature &feature )
-{
-  mFeature = feature;
-}
-
-double QgsLabelFeature::overrunDistance() const
-{
-  return mOverrunDistance;
-}
-
-void QgsLabelFeature::setOverrunDistance( double overrunDistance )
-{
-  mOverrunDistance = overrunDistance;
-}
-
-double QgsLabelFeature::overrunSmoothDistance() const
-{
-  return mOverrunSmoothDistance;
-}
-
-void QgsLabelFeature::setOverrunSmoothDistance( double overrunSmoothDistance )
-{
-  mOverrunSmoothDistance = overrunSmoothDistance;
-}
